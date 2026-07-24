@@ -23,13 +23,13 @@ final class HeadDBPluginJarMetadata {
     private final String name;
     private final String mainClass;
     private final String paperPluginVersion;
-    private final String buildVersion;
+    private final String legacyBuildVersion;
 
-    private HeadDBPluginJarMetadata(@Nullable String name, @Nullable String mainClass, @Nullable String paperPluginVersion, @Nullable String buildVersion) {
+    private HeadDBPluginJarMetadata(@Nullable String name, @Nullable String mainClass, @Nullable String paperPluginVersion, @Nullable String legacyBuildVersion) {
         this.name = name;
         this.mainClass = mainClass;
         this.paperPluginVersion = paperPluginVersion;
-        this.buildVersion = buildVersion;
+        this.legacyBuildVersion = legacyBuildVersion;
     }
 
     static @NotNull HeadDBPluginJarMetadata read(@NotNull Path jar) throws IOException {
@@ -48,8 +48,8 @@ final class HeadDBPluginJarMetadata {
         Objects.requireNonNull(jarFile, "jarFile");
 
         PaperPluginYaml paperPluginYaml = readPaperPluginYaml(jarFile);
-        String buildVersion = readGitPropertiesVersion(jarFile);
-        return new HeadDBPluginJarMetadata(paperPluginYaml.name(), paperPluginYaml.mainClass(), paperPluginYaml.version(), buildVersion);
+        String legacyBuildVersion = readLegacyGitPropertiesVersion(jarFile);
+        return new HeadDBPluginJarMetadata(paperPluginYaml.name(), paperPluginYaml.mainClass(), paperPluginYaml.version(), legacyBuildVersion);
     }
 
     void validateDownloadedUpdate(@NotNull String expectedVersion) throws IOException {
@@ -80,11 +80,11 @@ final class HeadDBPluginJarMetadata {
     }
 
     @Nullable String preferredVersion() {
-        if (buildVersion != null && !buildVersion.isBlank()) {
-            return buildVersion;
+        if (paperPluginVersion != null && !paperPluginVersion.isBlank()) {
+            return paperPluginVersion;
         }
 
-        return paperPluginVersion;
+        return legacyBuildVersion;
     }
 
     @Nullable String name() {
@@ -99,8 +99,8 @@ final class HeadDBPluginJarMetadata {
         return paperPluginVersion;
     }
 
-    @Nullable String buildVersion() {
-        return buildVersion;
+    @Nullable String legacyBuildVersion() {
+        return legacyBuildVersion;
     }
 
     private static @NotNull PaperPluginYaml readPaperPluginYaml(@NotNull JarFile jarFile) throws IOException {
@@ -143,7 +143,7 @@ final class HeadDBPluginJarMetadata {
         return new PaperPluginYaml(name, mainClass, version);
     }
 
-    private static @Nullable String readGitPropertiesVersion(@NotNull JarFile jarFile) throws IOException {
+    private static @Nullable String readLegacyGitPropertiesVersion(@NotNull JarFile jarFile) throws IOException {
         JarEntry entry = jarFile.getJarEntry("git.properties");
 
         if (entry == null) {
@@ -182,5 +182,4 @@ final class HeadDBPluginJarMetadata {
 
     private record PaperPluginYaml(@Nullable String name, @Nullable String mainClass, @Nullable String version) {
     }
-
 }

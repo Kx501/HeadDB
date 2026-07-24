@@ -49,7 +49,8 @@ public final class DebugCommand extends AbstractPaperCommand {
 
         plugin.messages().send(context.sender(), Component.empty());
         plugin.messages().send(context.sender(), Component.text("> ", NamedTextColor.DARK_GRAY).append(Component.text("Debug", NamedTextColor.RED)));
-        plugin.messages().send(context.sender(), line("Version", buildInfo.version() + " (" + value(buildInfo.commit()) + ")"));
+        plugin.messages().send(context.sender(), line("Version", buildInfo.version()));
+        plugin.messages().send(context.sender(), line("Build", buildInfo.displayBuild() + " | " + value(buildInfo.commit())));
         plugin.messages().send(context.sender(), line("Runtime", plugin.getServer().getName() + " " + plugin.getServer().getMinecraftVersion() + " | Java " + compatibility.javaFeature()));
         plugin.messages().send(context.sender(), line("Supported", yesNo(compatibility.supported())));
         plugin.messages().send(context.sender(), databaseLine(status));

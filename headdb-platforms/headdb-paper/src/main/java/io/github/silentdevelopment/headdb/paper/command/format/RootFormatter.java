@@ -42,9 +42,9 @@ public final class RootFormatter {
             lines.add(Component.empty());
             lines.add(section("Build"));
             lines.add(field("Version", buildInfo.version()));
-            lines.add(field("Base version", buildInfo.baseVersion()));
-            lines.add(field("Build", valueOrUnavailable(buildInfo.buildNumber())));
-            lines.add(field("Attempt", valueOrUnavailable(buildInfo.buildAttempt())));
+            lines.add(field("Build", buildInfo.displayBuild()));
+            lines.add(field("Channel", buildInfo.channel()));
+            lines.add(field("Run ID", valueOrUnavailable(buildInfo.runId())));
             lines.add(field("Commit", valueOrUnavailable(buildInfo.commit())));
             lines.add(field("Full commit", valueOrUnavailable(buildInfo.fullCommit())));
             lines.add(field("Branch", valueOrUnavailable(buildInfo.branch())));

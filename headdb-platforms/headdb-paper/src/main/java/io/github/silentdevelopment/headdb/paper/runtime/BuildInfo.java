@@ -6,36 +6,52 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Properties;
 
-public record BuildInfo(
-        @NotNull String version,
-        @NotNull String baseVersion,
-        @Nullable String buildNumber,
-        @Nullable String buildAttempt,
-        @Nullable String commit,
-        @Nullable String fullCommit,
-        @Nullable String branch,
-        @Nullable String buildTime
-) {
+public record BuildInfo(@NotNull String version, @NotNull String channel, @Nullable String buildNumber, @Nullable String buildAttempt, @Nullable String runId, @Nullable String commit, @Nullable String fullCommit, @Nullable String branch, @Nullable String buildTime) {
+
+    private static final String BUILD_PROPERTIES_RESOURCE = "META-INF/headdb-build.properties";
+    private static final String GIT_PROPERTIES_RESOURCE = "git.properties";
 
     public static @NotNull BuildInfo read(@NotNull JavaPlugin plugin) {
         Objects.requireNonNull(plugin, "plugin");
 
-        String pluginVersion = plugin.getPluginMeta().getVersion();
-        Properties properties = readProperties(plugin, "git.properties");
+        Properties buildProperties = readProperties(plugin, BUILD_PROPERTIES_RESOURCE);
+        Properties gitProperties = readProperties(plugin, GIT_PROPERTIES_RESOURCE);
+        return from(plugin.getPluginMeta().getVersion(), buildProperties, gitProperties);
+    }
 
-        String buildVersion = valueOrDefault(properties.getProperty("headdb.build.version"), pluginVersion);
-        String baseVersion = valueOrDefault(properties.getProperty("headdb.build.base-version"), pluginVersion);
-        String buildNumber = blankToNull(properties.getProperty("headdb.build.number"));
-        String buildAttempt = blankToNull(properties.getProperty("headdb.build.attempt"));
-        String fullCommit = firstPresent(properties.getProperty("headdb.build.commit"), properties.getProperty("git.commit.id.full"));
-        String commit = firstPresent(properties.getProperty("git.commit.id.abbrev"), abbreviate(fullCommit));
-        String branch = blankToNull(properties.getProperty("git.branch"));
-        String buildTime = blankToNull(properties.getProperty("git.build.time"));
+    static @NotNull BuildInfo from(@NotNull String pluginVersion, @NotNull Properties buildProperties, @NotNull Properties gitProperties) {
+        Objects.requireNonNull(pluginVersion, "pluginVersion");
+        Objects.requireNonNull(buildProperties, "buildProperties");
+        Objects.requireNonNull(gitProperties, "gitProperties");
 
-        return new BuildInfo(buildVersion, baseVersion, buildNumber, buildAttempt, commit, fullCommit, branch, buildTime);
+        String channel = channel(buildProperties.getProperty("headdb.build.channel"));
+        String buildNumber = optionalValue(buildProperties.getProperty("headdb.build.number"));
+        String buildAttempt = buildNumber == null ? null : optionalValue(buildProperties.getProperty("headdb.build.attempt"));
+        String runId = buildNumber == null ? null : optionalValue(buildProperties.getProperty("headdb.build.run-id"));
+        String fullCommit = firstPresent(buildProperties.getProperty("headdb.build.commit"), gitProperties.getProperty("git.commit.id.full"));
+        String commit = firstPresent(gitProperties.getProperty("git.commit.id.abbrev"), abbreviate(fullCommit));
+        String branch = firstPresent(buildProperties.getProperty("headdb.build.branch"), gitProperties.getProperty("git.branch"));
+        String buildTime = firstPresent(buildProperties.getProperty("headdb.build.timestamp"), gitProperties.getProperty("git.build.time"));
+
+        return new BuildInfo(pluginVersion, channel, buildNumber, buildAttempt, runId, commit, fullCommit, branch, buildTime);
+    }
+
+    public @NotNull String displayBuild() {
+        String label = channelLabel();
+
+        if (buildNumber == null) {
+            return label;
+        }
+
+        if (buildAttempt == null || buildAttempt.equals("1")) {
+            return label + " #" + buildNumber;
+        }
+
+        return label + " #" + buildNumber + "." + buildAttempt;
     }
 
     public boolean hasGitInfo() {
@@ -43,16 +59,30 @@ public record BuildInfo(
     }
 
     public boolean hasCiBuildInfo() {
-        return buildNumber != null || buildAttempt != null || !version.equals(baseVersion);
+        return channel.equalsIgnoreCase("ci") && buildNumber != null;
+    }
+
+    private @NotNull String channelLabel() {
+        if (channel.equalsIgnoreCase("ci")) {
+            return "CI";
+        }
+
+        if (channel.length() == 1) {
+            return channel.toUpperCase(Locale.ROOT);
+        }
+
+        return Character.toUpperCase(channel.charAt(0)) + channel.substring(1).toLowerCase(Locale.ROOT);
     }
 
     private static @NotNull Properties readProperties(@NotNull JavaPlugin plugin, @NotNull String resource) {
         Properties properties = new Properties();
 
         try (InputStream input = plugin.getResource(resource)) {
-            if (input != null) {
-                properties.load(input);
+            if (input == null) {
+                return properties;
             }
+
+            properties.load(input);
         } catch (IOException ignored) {
             // Build information is optional.
         }
@@ -60,26 +90,26 @@ public record BuildInfo(
         return properties;
     }
 
-    private static @NotNull String valueOrDefault(@Nullable String value, @NotNull String fallback) {
-        String normalized = blankToNull(value);
+    private static @NotNull String channel(@Nullable String value) {
+        String normalized = optionalValue(value);
         if (normalized == null) {
-            return fallback;
+            return "local";
         }
 
-        return normalized;
+        return normalized.toLowerCase(Locale.ROOT);
     }
 
     private static @Nullable String firstPresent(@Nullable String first, @Nullable String second) {
-        String normalizedFirst = blankToNull(first);
+        String normalizedFirst = optionalValue(first);
         if (normalizedFirst != null) {
             return normalizedFirst;
         }
 
-        return blankToNull(second);
+        return optionalValue(second);
     }
 
     private static @Nullable String abbreviate(@Nullable String value) {
-        String normalized = blankToNull(value);
+        String normalized = optionalValue(value);
         if (normalized == null) {
             return null;
         }
@@ -91,11 +121,16 @@ public record BuildInfo(
         return normalized.substring(0, 7);
     }
 
-    private static @Nullable String blankToNull(@Nullable String value) {
-        if (value == null || value.isBlank() || value.equalsIgnoreCase("unknown")) {
+    private static @Nullable String optionalValue(@Nullable String value) {
+        if (value == null || value.isBlank()) {
             return null;
         }
 
-        return value.trim();
+        String normalized = value.trim();
+        if (normalized.equalsIgnoreCase("unknown") || normalized.equalsIgnoreCase("local")) {
+            return null;
+        }
+
+        return normalized;
     }
 }

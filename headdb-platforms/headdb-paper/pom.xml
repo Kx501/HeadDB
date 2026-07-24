@@ -294,32 +294,6 @@
             </plugin>
 
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-antrun-plugin</artifactId>
-                <version>3.1.0</version>
-                <executions>
-                    <execution>
-                        <id>append-build-info</id>
-                        <phase>prepare-package</phase>
-                        <goals>
-                            <goal>run</goal>
-                        </goals>
-                        <configuration>
-                            <target>
-                                <echo file="${project.build.outputDirectory}/git.properties" append="true">
-                                    headdb.build.version=${headdb.build.version}
-                                    headdb.build.base-version=${headdb.build.base-version}
-                                    headdb.build.number=${headdb.build.number}
-                                    headdb.build.attempt=${headdb.build.attempt}
-                                    headdb.build.commit=${headdb.build.commit}
-                                </echo>
-                            </target>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-
-            <plugin>
                 <groupId>io.github.git-commit-id</groupId>
                 <artifactId>git-commit-id-maven-plugin</artifactId>
                 <version>9.0.2</version>

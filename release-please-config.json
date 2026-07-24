@@ -1,0 +1,64 @@
+{
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
+  "bootstrap-sha": "45733cd4e64b227ade4f42c30f6b4bdd27e5d88d",
+  "release-type": "maven",
+  "include-v-in-tag": false,
+  "include-component-in-tag": false,
+  "skip-snapshot": true,
+  "prerelease": true,
+  "prerelease-type": "rc",
+  "versioning-strategy": "prerelease",
+  "draft": true,
+  "force-tag-creation": true,
+  "pull-request-title-pattern": "chore${scope}: release ${version}",
+  "changelog-sections": [
+    {
+      "type": "feat",
+      "section": "Features"
+    },
+    {
+      "type": "fix",
+      "section": "Fixes"
+    },
+    {
+      "type": "perf",
+      "section": "Performance"
+    },
+    {
+      "type": "refactor",
+      "section": "Refactoring"
+    },
+    {
+      "type": "docs",
+      "section": "Documentation"
+    },
+    {
+      "type": "build",
+      "section": "Build system"
+    },
+    {
+      "type": "ci",
+      "section": "Continuous integration"
+    },
+    {
+      "type": "test",
+      "section": "Tests",
+      "hidden": true
+    },
+    {
+      "type": "chore",
+      "section": "Maintenance",
+      "hidden": true
+    }
+  ],
+  "plugins": [
+    {
+      "type": "maven-workspace"
+    }
+  ],
+  "packages": {
+    ".": {
+      "package-name": "HeadDB"
+    }
+  }
+}

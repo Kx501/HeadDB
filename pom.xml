@@ -21,11 +21,13 @@
     </modules>
 
     <properties>
-        <headdb.build.version>${project.version}</headdb.build.version>
-        <headdb.build.base-version>${project.version}</headdb.build.base-version>
+        <headdb.build.channel>local</headdb.build.channel>
         <headdb.build.number>local</headdb.build.number>
         <headdb.build.attempt>1</headdb.build.attempt>
+        <headdb.build.run-id>local</headdb.build.run-id>
         <headdb.build.commit>unknown</headdb.build.commit>
+        <headdb.build.branch>local</headdb.build.branch>
+        <headdb.build.timestamp>unknown</headdb.build.timestamp>
 
         <java.version>21</java.version>
         <maven.compiler.release>${java.version}</maven.compiler.release>

@@ -18,21 +18,29 @@ class HeadDBPluginJarMetadataTest {
     private Path tempDirectory;
 
     @Test
-    void readsPaperPluginAndGitMetadata() throws Exception {
+    void prefersPaperPluginVersionOverLegacyBuildMetadata() throws Exception {
         Path jar = writeJar("HeadDB", HeadDBPluginJarMetadata.PLUGIN_MAIN_CLASS, "7.0.0-rc.2", "7.0.0-rc.2+build.5");
         HeadDBPluginJarMetadata metadata = HeadDBPluginJarMetadata.read(jar);
 
         assertEquals("HeadDB", metadata.name());
         assertEquals(HeadDBPluginJarMetadata.PLUGIN_MAIN_CLASS, metadata.mainClass());
         assertEquals("7.0.0-rc.2", metadata.paperPluginVersion());
-        assertEquals("7.0.0-rc.2+build.5", metadata.buildVersion());
-        assertEquals("7.0.0-rc.2+build.5", metadata.preferredVersion());
+        assertEquals("7.0.0-rc.2+build.5", metadata.legacyBuildVersion());
+        assertEquals("7.0.0-rc.2", metadata.preferredVersion());
     }
 
     @Test
     void validatesMatchingDownloadedUpdate() throws Exception {
-        Path jar = writeJar("HeadDB", HeadDBPluginJarMetadata.PLUGIN_MAIN_CLASS, "7.0.0-rc.2", "7.0.0-rc.2");
+        Path jar = writeJar("HeadDB", HeadDBPluginJarMetadata.PLUGIN_MAIN_CLASS, "7.0.0-rc.2", "7.0.0-rc.2+build.5");
         HeadDBPluginJarMetadata.read(jar).validateDownloadedUpdate("v7.0.0-rc.2");
+    }
+
+    @Test
+    void fallsBackToLegacyBuildVersionWhenPaperVersionIsMissing() throws Exception {
+        Path jar = writeJar("HeadDB", HeadDBPluginJarMetadata.PLUGIN_MAIN_CLASS, null, "7.0.0-rc.2");
+        HeadDBPluginJarMetadata metadata = HeadDBPluginJarMetadata.read(jar);
+
+        assertEquals("7.0.0-rc.2", metadata.preferredVersion());
     }
 
     @Test
@@ -60,11 +68,11 @@ class HeadDBPluginJarMetadataTest {
     }
 
     private Path writeJar(String name, String mainClass, String paperVersion, String buildVersion) throws IOException {
-        Path jar = tempDirectory.resolve(name + "-" + paperVersion.replace('+', '-') + ".jar");
+        Path jar = tempDirectory.resolve(name + "-" + (paperVersion == null ? "unknown" : paperVersion.replace('+', '-')) + ".jar");
 
         try (JarOutputStream output = new JarOutputStream(java.nio.file.Files.newOutputStream(jar))) {
             output.putNextEntry(new JarEntry("paper-plugin.yml"));
-            output.write(("name: \"" + name + "\"\nmain: " + mainClass + "\nversion: '" + paperVersion + "'\n").getBytes(StandardCharsets.UTF_8));
+            output.write(paperPluginYaml(name, mainClass, paperVersion).getBytes(StandardCharsets.UTF_8));
             output.closeEntry();
 
             if (buildVersion == null) {
@@ -77,6 +85,18 @@ class HeadDBPluginJarMetadataTest {
         }
 
         return jar;
+    }
+
+    private String paperPluginYaml(String name, String mainClass, String paperVersion) {
+        StringBuilder yaml = new StringBuilder();
+        yaml.append("name: \"").append(name).append("\"\n");
+        yaml.append("main: ").append(mainClass).append("\n");
+
+        if (paperVersion != null) {
+            yaml.append("version: '").append(paperVersion).append("'\n");
+        }
+
+        return yaml.toString();
     }
 
 }

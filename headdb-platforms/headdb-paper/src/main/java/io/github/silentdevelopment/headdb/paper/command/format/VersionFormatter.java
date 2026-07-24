@@ -39,7 +39,7 @@ public final class VersionFormatter {
         lines.add(versionLine(buildInfo.version(), updateResult));
 
         if (plugin.config().isDebug()) {
-            lines.add(field("Build", value(buildInfo.buildNumber())));
+            lines.add(field("Build", buildInfo.displayBuild()));
             lines.add(field("Branch", value(buildInfo.branch())));
             lines.add(field("Commit", value(buildInfo.commit())));
             lines.add(field("Timestamp", value(buildInfo.buildTime())));
@@ -61,7 +61,7 @@ public final class VersionFormatter {
         lines.add(Component.empty());
         lines.add(runningLine(plugin));
         lines.add(versionLine(buildInfo.version(), updateResult));
-        lines.add(field("Build", value(buildInfo.buildNumber())));
+        lines.add(field("Build", buildInfo.displayBuild()));
         lines.add(field("Branch", value(buildInfo.branch())));
         lines.add(field("Commit", value(buildInfo.commit())));
         lines.add(field("Timestamp", value(buildInfo.buildTime())));

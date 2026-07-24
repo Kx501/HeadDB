@@ -4,7 +4,7 @@ authors: ["SilentDevelopment", "TheSilentPro"]
 website: https://github.com/SilentDevelopment/HeadDB
 
 main: io.github.silentdevelopment.headdb.paper.HeadDBPlugin
-version: '${headdb.build.version}'
+version: '${project.version}'
 api-version: '26.1.2'
 folia-supported: true
 loader: io.github.silentdevelopment.headdb.paper.runtime.HeadDBPluginLoader

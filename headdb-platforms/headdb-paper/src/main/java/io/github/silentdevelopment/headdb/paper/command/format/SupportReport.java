@@ -46,9 +46,11 @@ public final class SupportReport {
 
         section(report, "Plugin");
         line(report, "Version", buildInfo.version());
-        line(report, "Base version", buildInfo.baseVersion());
-        line(report, "Build", value(buildInfo.buildNumber()));
-        line(report, "Attempt", value(buildInfo.buildAttempt()));
+        line(report, "Build", buildInfo.displayBuild());
+        line(report, "Build channel", buildInfo.channel());
+        line(report, "Build number", value(buildInfo.buildNumber()));
+        line(report, "Build attempt", value(buildInfo.buildAttempt()));
+        line(report, "Run ID", value(buildInfo.runId()));
         line(report, "Commit", value(buildInfo.commit()));
         line(report, "Full commit", value(buildInfo.fullCommit()));
         line(report, "Branch", value(buildInfo.branch()));
