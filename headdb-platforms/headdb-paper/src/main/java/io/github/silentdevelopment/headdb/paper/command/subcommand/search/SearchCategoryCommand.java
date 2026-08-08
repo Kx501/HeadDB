@@ -44,7 +44,7 @@ public final class SearchCategoryCommand extends AbstractPaperCommand {
             SearchRequest request = SearchOptions.categoryRequest(context, category);
             execute(context, request);
         } catch (IllegalArgumentException exception) {
-            plugin.messages().send(context.sender(), plugin.messages().invalidArgument(context.sender(), exception.getMessage()));
+            plugin.messages().send(context.sender(), plugin.messages().invalidArgument(context.sender(), exception));
         }
     }
 
@@ -71,7 +71,7 @@ public final class SearchCategoryCommand extends AbstractPaperCommand {
 
     private void execute(@NotNull PaperCommandContext context, @NotNull SearchRequest request) {
         if (context.isPlayer()) {
-            plugin.messages().send(context.sender(), plugin.messages().searchGuiNotReady(context.sender()));
+            plugin.guis().openSearch(context.player(), request);
             return;
         }
 

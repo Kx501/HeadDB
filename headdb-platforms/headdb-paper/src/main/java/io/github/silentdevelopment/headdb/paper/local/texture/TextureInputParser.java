@@ -2,6 +2,8 @@ package io.github.silentdevelopment.headdb.paper.local.texture;
 
 import com.destroystokyo.paper.profile.ProfileProperty;
 import io.github.silentdevelopment.headdb.model.HeadTexture;
+import io.github.silentdevelopment.headdb.paper.message.MessageException;
+import io.github.silentdevelopment.headdb.paper.message.MessageKey;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
@@ -21,7 +23,7 @@ public final class TextureInputParser {
         String value = input.trim();
 
         if (value.isEmpty()) {
-            throw new IllegalArgumentException("Texture input cannot be empty.");
+            throw new MessageException(MessageKey.COMMAND_ERROR_TEXTURE_EMPTY);
         }
 
         if (value.startsWith(TEXTURE_URL_PREFIX)) {
@@ -45,11 +47,11 @@ public final class TextureInputParser {
 
         ItemMeta meta = item.getItemMeta();
         if (!(meta instanceof SkullMeta skullMeta)) {
-            throw new IllegalArgumentException("Held item is not a player head.");
+            throw new MessageException(MessageKey.COMMAND_ERROR_TEXTURE_NOT_HEAD);
         }
 
         if (skullMeta.getPlayerProfile() == null) {
-            throw new IllegalArgumentException("Held player head does not contain a profile.");
+            throw new MessageException(MessageKey.COMMAND_ERROR_TEXTURE_NO_PROFILE);
         }
 
         for (ProfileProperty property : skullMeta.getPlayerProfile().getProperties()) {
@@ -60,7 +62,7 @@ public final class TextureInputParser {
             return parse(property.getValue());
         }
 
-        throw new IllegalArgumentException("Held player head does not contain a texture property.");
+        throw new MessageException(MessageKey.COMMAND_ERROR_TEXTURE_NO_PROPERTY);
     }
 
     private static @NotNull Optional<String> decodeBase64(@NotNull String value) {
@@ -74,7 +76,7 @@ public final class TextureInputParser {
     private static @NotNull String extractHash(@NotNull String value) {
         int start = value.indexOf(TEXTURE_URL_PREFIX);
         if (start < 0) {
-            throw new IllegalArgumentException("Texture input does not contain a textures.minecraft.net URL.");
+            throw new MessageException(MessageKey.COMMAND_ERROR_TEXTURE_NO_URL);
         }
 
         return hashFromUrl(value.substring(start));
@@ -95,7 +97,7 @@ public final class TextureInputParser {
 
         hash = hash.substring(0, end).toLowerCase(java.util.Locale.ROOT);
         if (hash.isBlank()) {
-            throw new IllegalArgumentException("Texture URL does not contain a texture hash.");
+            throw new MessageException(MessageKey.COMMAND_ERROR_TEXTURE_NO_HASH);
         }
 
         return hash;

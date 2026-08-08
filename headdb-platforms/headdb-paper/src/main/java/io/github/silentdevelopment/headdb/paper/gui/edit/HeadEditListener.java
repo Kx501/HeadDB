@@ -26,11 +26,9 @@ import io.github.silentdevelopment.headdb.paper.gui.material.MaterialSelectionMe
 import io.github.silentdevelopment.headdb.paper.gui.local.LocalHeadListMenu;
 import io.github.silentdevelopment.headdb.paper.local.custom.StoredCustomHead;
 import io.github.silentdevelopment.headdb.paper.local.override.RemoteHeadOverride;
+import io.github.silentdevelopment.headdb.paper.message.MessageKey;
 import io.github.silentdevelopment.headdb.paper.permission.Permissions;
 import io.github.silentdevelopment.headdb.paper.sound.SoundKey;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
-import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
 import org.bukkit.event.EventHandler;
@@ -47,6 +45,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -254,7 +253,7 @@ public final class HeadEditListener implements Listener {
         }
 
         boolean added = plugin.favorites().toggle(player.getUniqueId(), id);
-        player.sendMessage(Component.text(added ? "Added favorite: " : "Removed favorite: ", added ? NamedTextColor.YELLOW : NamedTextColor.GRAY).append(Component.text(GuiLabels.head(plugin, player, id), NamedTextColor.GOLD)));
+        player.sendMessage(plugin.messages().render(player, added ? MessageKey.GUI_FAVORITE_ADDED : MessageKey.GUI_FAVORITE_REMOVED, Map.of("head", GuiLabels.head(plugin, player, id))));
         plugin.sounds().play(player, added ? SoundKey.FAVORITE_ADD : SoundKey.FAVORITE_REMOVE);
     }
 
@@ -272,13 +271,13 @@ public final class HeadEditListener implements Listener {
 
         Optional<Head> head = plugin.headRegistry().find(id);
         if (head.isEmpty()) {
-            player.sendMessage(Component.text("Head no longer exists.", NamedTextColor.RED));
+            player.sendMessage(plugin.messages().render(player, MessageKey.GUI_HEAD_MISSING));
             plugin.sounds().play(player, SoundKey.INVALID);
             return;
         }
 
         if (player.getInventory().firstEmpty() == -1) {
-            player.sendMessage(Component.text("Your inventory is full.", NamedTextColor.RED));
+            player.sendMessage(plugin.messages().render(player, MessageKey.GUI_INVENTORY_FULL));
             plugin.sounds().play(player, SoundKey.INVALID);
             return;
         }
@@ -289,7 +288,7 @@ public final class HeadEditListener implements Listener {
 
         java.util.Map<Integer, ItemStack> remaining = player.getInventory().addItem(item.clone());
         if (!remaining.isEmpty()) {
-            player.sendMessage(Component.text("Your inventory is full.", NamedTextColor.RED));
+            player.sendMessage(plugin.messages().render(player, MessageKey.GUI_INVENTORY_FULL));
             plugin.sounds().play(player, SoundKey.INVALID);
             return;
         }
@@ -307,7 +306,7 @@ public final class HeadEditListener implements Listener {
 
     private void openEdit(@NotNull Player player, @NotNull HeadId id) {
         if (!plugin.adminModes().enabled(player)) {
-            player.sendMessage(Component.text("Enable Admin Mode to edit heads.", NamedTextColor.RED));
+            player.sendMessage(plugin.messages().render(player, MessageKey.GUI_ADMIN_MODE_REQUIRED));
             plugin.sounds().play(player, SoundKey.NO_PERMISSION);
             return;
         }
@@ -350,7 +349,7 @@ public final class HeadEditListener implements Listener {
         }
 
         if (!plugin.adminModes().enabled(player)) {
-            player.sendMessage(Component.text("Enable Admin Mode to edit heads.", NamedTextColor.RED));
+            player.sendMessage(plugin.messages().render(player, MessageKey.GUI_ADMIN_MODE_REQUIRED));
             plugin.sounds().play(player, SoundKey.NO_PERMISSION);
             return;
         }
@@ -426,7 +425,7 @@ public final class HeadEditListener implements Listener {
         }
 
         if (action.equals(HeadEditMenu.ACTION_LORE_CLEAR)) {
-            setLore(player, id, List.of(), "Lore cleared.");
+            setLore(player, id, List.of(), MessageKey.GUI_EDIT_LORE_CLEARED);
             return;
         }
 
@@ -446,7 +445,7 @@ public final class HeadEditListener implements Listener {
             return;
         }
 
-        player.sendMessage(Component.text("Unknown edit action.", NamedTextColor.RED));
+        player.sendMessage(plugin.messages().render(player, MessageKey.GUI_EDIT_UNKNOWN_ACTION));
     }
 
     private void openSameMenu(@NotNull Player player, @NotNull HeadEditMenu.EditHolder holder, int page) {
@@ -466,7 +465,7 @@ public final class HeadEditListener implements Listener {
 
         String oldName = plugin.headRegistry().find(id).map(Head::name).orElse(id.display());
         player.closeInventory();
-        plugin.prompts().request(player, Component.text("Enter the new name.", NamedTextColor.GOLD), value -> {
+        plugin.prompts().request(player, plugin.messages().render(player, MessageKey.GUI_EDIT_NAME_PROMPT), value -> {
             if (id.isRemote()) {
                 RemoteHeadOverride override = plugin.headRegistry().overrides().find(id).orElse(RemoteHeadOverride.empty(id, player.getUniqueId()));
                 plugin.headRegistry().overrides().save(override.withName(value, player.getUniqueId()));
@@ -477,8 +476,8 @@ public final class HeadEditListener implements Listener {
 
             mutated(player, id);
             plugin.sounds().play(player, SoundKey.SAVE);
-            player.sendMessage(Component.text("Name Updated", NamedTextColor.GOLD, TextDecoration.BOLD));
-            player.sendMessage(Component.text(oldName, NamedTextColor.GRAY).append(Component.text(" > ", NamedTextColor.DARK_GRAY)).append(Component.text(value, NamedTextColor.GREEN)));
+            player.sendMessage(plugin.messages().render(player, MessageKey.GUI_EDIT_NAME_UPDATED));
+            player.sendMessage(plugin.messages().render(player, MessageKey.GUI_EDIT_NAME_CHANGE, Map.of("old", oldName, "new", value)));
             HeadEditMenu.open(plugin, player, id);
         });
     }
@@ -498,7 +497,7 @@ public final class HeadEditListener implements Listener {
 
         mutated(player, id);
         plugin.sounds().play(player, SoundKey.SAVE);
-        player.sendMessage(Component.text("Category set to ", NamedTextColor.GRAY).append(Component.text(GuiLabels.category(plugin, player, category), NamedTextColor.GOLD)));
+        player.sendMessage(plugin.messages().render(player, MessageKey.GUI_EDIT_CATEGORY_SET, Map.of("category", GuiLabels.category(plugin, player, category))));
         HeadEditMenu.open(plugin, player, id);
     }
 
@@ -553,7 +552,7 @@ public final class HeadEditListener implements Listener {
         plugin.headRegistry().overrides().save(override.withHidden(!hidden, player.getUniqueId()));
         mutated(player, id);
         plugin.sounds().play(player, hidden ? SoundKey.SHOW_HEAD : SoundKey.HIDE_HEAD);
-        player.sendMessage(Component.text(hidden ? "Head is now visible." : "Head is now hidden.", hidden ? NamedTextColor.GREEN : NamedTextColor.GRAY));
+        player.sendMessage(plugin.messages().render(player, hidden ? MessageKey.GUI_HEAD_VISIBLE : MessageKey.GUI_HEAD_HIDDEN));
         HeadEditMenu.open(plugin, player, id);
     }
 
@@ -566,7 +565,7 @@ public final class HeadEditListener implements Listener {
         plugin.headRegistry().overrides().delete(id);
         mutated(player, id);
         plugin.sounds().play(player, SoundKey.SAVE);
-        player.sendMessage(Component.text("Local override reset.", NamedTextColor.GRAY));
+        player.sendMessage(plugin.messages().render(player, MessageKey.GUI_EDIT_OVERRIDE_RESET));
         HeadEditMenu.open(plugin, player, id);
     }
 
@@ -590,7 +589,7 @@ public final class HeadEditListener implements Listener {
         plugin.headRegistry().customHeads().save(stored.withDraft(false));
         mutated(player, id);
         plugin.sounds().play(player, SoundKey.PUBLISH);
-        player.sendMessage(Component.text("Draft published: ", NamedTextColor.GRAY).append(Component.text(GuiLabels.head(plugin, player, id), NamedTextColor.GOLD)));
+        player.sendMessage(plugin.messages().render(player, MessageKey.GUI_HEAD_DRAFT_PUBLISHED, Map.of("head", GuiLabels.head(plugin, player, id))));
         HeadEditMenu.open(plugin, player, id);
     }
 
@@ -605,7 +604,7 @@ public final class HeadEditListener implements Listener {
         }
 
         player.closeInventory();
-        plugin.prompts().request(player, Component.text("Enter the new head price, or 0 to clear.", NamedTextColor.GOLD), value -> {
+        plugin.prompts().request(player, plugin.messages().render(player, MessageKey.GUI_HEAD_PRICE_PROMPT), value -> {
             try {
                 double price = Double.parseDouble(value.trim());
                 plugin.economy().setHeadPrice(id, price);
@@ -615,7 +614,7 @@ public final class HeadEditListener implements Listener {
                 player.sendMessage(plugin.messages().priceInvalid(player));
                 plugin.sounds().play(player, SoundKey.PRICE_FAILURE);
             } catch (RuntimeException exception) {
-                player.sendMessage(Component.text("Failed to update head price: " + exception.getMessage(), NamedTextColor.RED));
+                player.sendMessage(plugin.messages().render(player, MessageKey.GUI_HEAD_PRICE_FAILED, Map.of("message", String.valueOf(exception.getMessage()))));
                 plugin.sounds().play(player, SoundKey.PRICE_FAILURE);
             }
 
@@ -629,10 +628,10 @@ public final class HeadEditListener implements Listener {
         }
 
         player.closeInventory();
-        plugin.prompts().request(player, Component.text("Enter the lore line to add.", NamedTextColor.GOLD), value -> {
+        plugin.prompts().request(player, plugin.messages().render(player, MessageKey.GUI_EDIT_LORE_ADD_PROMPT), value -> {
             List<String> lore = new ArrayList<>(HeadEditMenu.loreLines(plugin, id));
             lore.add(value);
-            setLore(player, id, lore, "Lore line added.");
+            setLore(player, id, lore, MessageKey.GUI_EDIT_LORE_ADDED);
         });
     }
 
@@ -648,9 +647,9 @@ public final class HeadEditListener implements Listener {
         }
 
         player.closeInventory();
-        plugin.prompts().request(player, Component.text("Enter replacement text for lore line " + (line + 1) + ".", NamedTextColor.GOLD), value -> {
+        plugin.prompts().request(player, plugin.messages().render(player, MessageKey.GUI_EDIT_LORE_EDIT_PROMPT, Map.of("line", String.valueOf(line + 1))), value -> {
             lore.set(line, value);
-            setLore(player, id, lore, "Lore line updated.");
+            setLore(player, id, lore, MessageKey.GUI_EDIT_LORE_UPDATED);
         });
     }
 
@@ -666,10 +665,10 @@ public final class HeadEditListener implements Listener {
         }
 
         lore.remove(line);
-        setLore(player, id, lore, "Lore line removed.");
+        setLore(player, id, lore, MessageKey.GUI_EDIT_LORE_LINE_REMOVED);
     }
 
-    private void setLore(@NotNull Player player, @NotNull HeadId id, @NotNull List<String> lore, @NotNull String message) {
+    private void setLore(@NotNull Player player, @NotNull HeadId id, @NotNull List<String> lore, @NotNull MessageKey message) {
         if (!editable(player, id, Permissions.EDIT_LORE)) {
             return;
         }
@@ -685,7 +684,7 @@ public final class HeadEditListener implements Listener {
 
         mutated(player, id);
         plugin.sounds().play(player, SoundKey.SAVE);
-        player.sendMessage(Component.text(message, NamedTextColor.GRAY));
+        player.sendMessage(plugin.messages().render(player, message));
         HeadEditMenu.openLore(plugin, player, id, 0);
     }
 
@@ -705,13 +704,13 @@ public final class HeadEditListener implements Listener {
 
         mutated(player, id);
         plugin.sounds().play(player, SoundKey.SAVE);
-        player.sendMessage(Component.text("Lore reset to default.", NamedTextColor.GRAY));
+        player.sendMessage(plugin.messages().render(player, MessageKey.GUI_EDIT_LORE_RESET));
         HeadEditMenu.openLore(plugin, player, id, 0);
     }
 
     private boolean editable(@NotNull Player player, @NotNull HeadId id, @NotNull String permission) {
         if (!plugin.adminModes().enabled(player)) {
-            player.sendMessage(Component.text("Enable Admin Mode to edit heads.", NamedTextColor.RED));
+            player.sendMessage(plugin.messages().render(player, MessageKey.GUI_ADMIN_MODE_REQUIRED));
             return false;
         }
 

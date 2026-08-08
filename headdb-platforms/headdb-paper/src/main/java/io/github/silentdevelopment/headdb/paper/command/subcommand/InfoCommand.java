@@ -59,7 +59,7 @@ public final class InfoCommand extends AbstractPaperCommand {
                 return;
             }
 
-            for (Component line : HeadInfoFormatter.format(resolvedHead)) {
+            for (Component line : HeadInfoFormatter.format(plugin.messages(), context.sender(), resolvedHead)) {
                 plugin.messages().send(context.sender(), line);
             }
         }));
@@ -103,7 +103,7 @@ public final class InfoCommand extends AbstractPaperCommand {
         try {
             return Optional.of(SearchParser.headId(raw));
         } catch (IllegalArgumentException exception) {
-            plugin.messages().send(context.sender(), plugin.messages().invalidArgument(context.sender(), exception.getMessage()));
+            plugin.messages().send(context.sender(), plugin.messages().invalidArgument(context.sender(), exception));
             return Optional.empty();
         }
     }

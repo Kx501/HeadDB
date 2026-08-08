@@ -24,6 +24,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -52,7 +53,7 @@ public final class DeleteHeadConfirmMenu {
 
         Optional<Head> head = plugin.headRegistry().find(id);
         if (head.isEmpty()) {
-            player.sendMessage(Component.text("Custom head no longer exists.", NamedTextColor.RED));
+            player.sendMessage(plugin.messages().render(player, MessageKey.GUI_CUSTOM_HEAD_MISSING));
             return;
         }
 
@@ -125,7 +126,7 @@ public final class DeleteHeadConfirmMenu {
         String label = GuiLabels.head(plugin, player, holder.id());
         if (!plugin.headRegistry().customHeads().delete(holder.id())) {
             player.closeInventory();
-            player.sendMessage(Component.text("Custom head no longer exists: ", NamedTextColor.RED).append(Component.text(holder.id().display(), NamedTextColor.GOLD)));
+            player.sendMessage(plugin.messages().render(player, MessageKey.GUI_CUSTOM_HEAD_MISSING_ID, Map.of("id", holder.id().display())));
             plugin.sounds().play(player, SoundKey.INVALID);
             return true;
         }
@@ -134,7 +135,7 @@ public final class DeleteHeadConfirmMenu {
         plugin.clearItemCache();
         plugin.clearSearchCache();
         player.closeInventory();
-        player.sendMessage(Component.text("Custom head deleted: ", NamedTextColor.GRAY).append(Component.text(label, NamedTextColor.GOLD)));
+        player.sendMessage(plugin.messages().render(player, MessageKey.GUI_CUSTOM_HEAD_DELETED, Map.of("head", label)));
         plugin.sounds().play(player, SoundKey.DELETE_CONFIRM);
         return true;
     }

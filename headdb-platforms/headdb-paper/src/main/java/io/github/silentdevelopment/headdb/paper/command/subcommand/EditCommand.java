@@ -8,6 +8,8 @@ import io.github.silentdevelopment.headdb.paper.command.Suggestions;
 import io.github.silentdevelopment.headdb.paper.command.format.HeadInfoFormatter;
 import io.github.silentdevelopment.headdb.paper.command.search.SearchParser;
 import io.github.silentdevelopment.headdb.paper.local.override.RemoteHeadOverride;
+import io.github.silentdevelopment.headdb.paper.message.MessageException;
+import io.github.silentdevelopment.headdb.paper.message.MessageKey;
 import io.github.silentdevelopment.headdb.paper.permission.Permissions;
 import io.github.silentdevelopment.relay.argument.Argument;
 import io.github.silentdevelopment.relay.command.Command;
@@ -16,12 +18,12 @@ import io.github.silentdevelopment.relay.paper.command.AbstractPaperCommand;
 import io.github.silentdevelopment.relay.paper.command.PaperCommands;
 import io.github.silentdevelopment.relay.paper.command.context.PaperCommandContext;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
@@ -45,12 +47,12 @@ public final class EditCommand extends AbstractPaperCommand {
         try {
             id = SearchParser.headId(context.get(ID));
         } catch (IllegalArgumentException exception) {
-            plugin.messages().send(context.sender(), plugin.messages().invalidArgument(context.sender(), exception.getMessage()));
+            plugin.messages().send(context.sender(), plugin.messages().invalidArgument(context.sender(), exception));
             return;
         }
 
         if (!id.isRemote()) {
-            plugin.messages().send(context.sender(), Component.text("Only remote heads can be edited with /hdb edit. Use /hdb custom for custom heads.", NamedTextColor.RED));
+            send(context, MessageKey.COMMAND_EDIT_REMOTE_ONLY, Map.of());
             return;
         }
 
@@ -77,7 +79,7 @@ public final class EditCommand extends AbstractPaperCommand {
                 default -> usage(context);
             }
         } catch (IllegalArgumentException exception) {
-            plugin.messages().send(context.sender(), plugin.messages().invalidArgument(context.sender(), exception.getMessage()));
+            plugin.messages().send(context.sender(), plugin.messages().invalidArgument(context.sender(), exception));
         }
     }
 
@@ -95,24 +97,24 @@ public final class EditCommand extends AbstractPaperCommand {
 
     private void info(@NotNull PaperCommandContext context, @NotNull HeadId id) {
         require(context, Permissions.EDIT);
-        Head head = plugin.headRegistry().find(id).orElseThrow(() -> new IllegalArgumentException("Unknown head: " + id));
-        for (Component line : HeadInfoFormatter.format(head)) {
+        Head head = plugin.headRegistry().find(id).orElseThrow(() -> new MessageException(MessageKey.COMMAND_ERROR_UNKNOWN_HEAD, Map.of("id", id.toString())));
+        for (Component line : HeadInfoFormatter.format(plugin.messages(), context.sender(), head)) {
             plugin.messages().send(context.sender(), line);
         }
         plugin.headRegistry().overrides().find(id).ifPresentOrElse(
-                override -> plugin.messages().send(context.sender(), Component.text("Local override: present", NamedTextColor.GOLD)),
-                () -> plugin.messages().send(context.sender(), Component.text("Local override: none", NamedTextColor.GRAY))
+                override -> send(context, MessageKey.COMMAND_EDIT_OVERRIDE_PRESENT, Map.of()),
+                () -> send(context, MessageKey.COMMAND_EDIT_OVERRIDE_NONE, Map.of())
         );
     }
 
     private void name(@NotNull PaperCommandContext context, @NotNull HeadId id) {
         require(context, Permissions.EDIT_NAME);
-        save(context, override(context, id).withName(required(context, VALUE, "Usage: /hdb edit <id> name <name>"), actor(context)));
+        save(context, override(context, id).withName(required(context, VALUE, MessageKey.COMMAND_USAGE_EDIT_NAME), actor(context)));
     }
 
     private void loreSet(@NotNull PaperCommandContext context, @NotNull HeadId id) {
         require(context, Permissions.EDIT_LORE);
-        save(context, override(context, id).withLore(List.of(required(context, VALUE, "Usage: /hdb edit <id> lore-set <line>")), actor(context)));
+        save(context, override(context, id).withLore(List.of(required(context, VALUE, MessageKey.COMMAND_USAGE_EDIT_LORE_SET)), actor(context)));
     }
 
     private void loreClear(@NotNull PaperCommandContext context, @NotNull HeadId id) {
@@ -122,17 +124,17 @@ public final class EditCommand extends AbstractPaperCommand {
 
     private void tagAdd(@NotNull PaperCommandContext context, @NotNull HeadId id) {
         require(context, Permissions.EDIT_TAGS);
-        save(context, override(context, id).withTagAdded(required(context, VALUE, "Usage: /hdb edit <id> tag-add <tag>"), actor(context)));
+        save(context, override(context, id).withTagAdded(required(context, VALUE, MessageKey.COMMAND_USAGE_EDIT_TAG_ADD), actor(context)));
     }
 
     private void tagRemove(@NotNull PaperCommandContext context, @NotNull HeadId id) {
         require(context, Permissions.EDIT_TAGS);
-        save(context, override(context, id).withTagRemoved(required(context, VALUE, "Usage: /hdb edit <id> tag-remove <tag>"), actor(context)));
+        save(context, override(context, id).withTagRemoved(required(context, VALUE, MessageKey.COMMAND_USAGE_EDIT_TAG_REMOVE), actor(context)));
     }
 
     private void tagsReplace(@NotNull PaperCommandContext context, @NotNull HeadId id) {
         require(context, Permissions.EDIT_TAGS);
-        String raw = required(context, VALUE, "Usage: /hdb edit <id> tags-replace <tag,tag,...>");
+        String raw = required(context, VALUE, MessageKey.COMMAND_USAGE_EDIT_TAGS_REPLACE);
         Set<String> tags = new LinkedHashSet<>();
         Arrays.stream(raw.split(",")).map(String::trim).filter(value -> !value.isBlank()).map(value -> value.toLowerCase(java.util.Locale.ROOT)).forEach(tags::add);
         save(context, override(context, id).withReplacementTags(tags, actor(context)));
@@ -140,7 +142,7 @@ public final class EditCommand extends AbstractPaperCommand {
 
     private void category(@NotNull PaperCommandContext context, @NotNull HeadId id) {
         require(context, Permissions.EDIT_CATEGORY);
-        save(context, override(context, id).withCategory(required(context, VALUE, "Usage: /hdb edit <id> category <category>"), actor(context)));
+        save(context, override(context, id).withCategory(required(context, VALUE, MessageKey.COMMAND_USAGE_EDIT_CATEGORY), actor(context)));
     }
 
     private void hidden(@NotNull PaperCommandContext context, @NotNull HeadId id, boolean hidden) {
@@ -152,7 +154,7 @@ public final class EditCommand extends AbstractPaperCommand {
         require(context, Permissions.EDIT_RESET);
         boolean deleted = plugin.headRegistry().overrides().delete(id);
         changed();
-        plugin.messages().send(context.sender(), Component.text(deleted ? "Reset local override for " : "No local override existed for ", deleted ? NamedTextColor.GRAY : NamedTextColor.RED).append(Component.text(id.display(), NamedTextColor.GOLD)));
+        send(context, deleted ? MessageKey.COMMAND_EDIT_RESET : MessageKey.COMMAND_EDIT_RESET_MISSING, Map.of("id", id.display()));
     }
 
     private @NotNull RemoteHeadOverride override(@NotNull PaperCommandContext context, @NotNull HeadId id) {
@@ -162,18 +164,18 @@ public final class EditCommand extends AbstractPaperCommand {
     private void save(@NotNull PaperCommandContext context, @NotNull RemoteHeadOverride override) {
         plugin.headRegistry().overrides().save(override);
         changed();
-        plugin.messages().send(context.sender(), Component.text("Saved local override for ", NamedTextColor.GRAY).append(Component.text(override.headId().display(), NamedTextColor.GOLD)));
+        send(context, MessageKey.COMMAND_EDIT_SAVED, Map.of("id", override.headId().display()));
     }
 
     private void require(@NotNull PaperCommandContext context, @NotNull String permission) {
         if (!Permissions.has(context.sender(), permission)) {
-            throw new IllegalArgumentException("You do not have permission to do that.");
+            throw new MessageException(MessageKey.COMMAND_ERROR_NO_PERMISSION);
         }
     }
 
-    private @NotNull String required(@NotNull PaperCommandContext context, @NotNull Argument<String> argument, @NotNull String message) {
+    private @NotNull String required(@NotNull PaperCommandContext context, @NotNull Argument<String> argument, @NotNull MessageKey key) {
         if (!context.has(argument) || context.get(argument).trim().isEmpty()) {
-            throw new IllegalArgumentException(message);
+            throw new MessageException(key);
         }
         return context.get(argument).trim();
     }
@@ -189,6 +191,10 @@ public final class EditCommand extends AbstractPaperCommand {
     }
 
     private void usage(@NotNull PaperCommandContext context) {
-        plugin.messages().send(context.sender(), Component.text("Usage: /hdb edit <remote-id> <info|name|lore-set|lore-clear|tag-add|tag-remove|tags-replace|category|hide|show|reset> ...", NamedTextColor.RED));
+        send(context, MessageKey.COMMAND_USAGE_EDIT, Map.of());
+    }
+
+    private void send(@NotNull PaperCommandContext context, @NotNull MessageKey key, @NotNull Map<String, String> placeholders) {
+        plugin.messages().send(context.sender(), plugin.messages().render(context.sender(), key, placeholders));
     }
 }

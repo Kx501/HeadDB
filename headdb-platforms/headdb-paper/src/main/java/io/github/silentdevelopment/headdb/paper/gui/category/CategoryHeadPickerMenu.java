@@ -12,6 +12,7 @@ import io.github.silentdevelopment.headdb.paper.gui.common.GuiMaterials;
 import io.github.silentdevelopment.headdb.paper.gui.common.GuiTitles;
 import io.github.silentdevelopment.headdb.paper.item.HeadItemIds;
 import io.github.silentdevelopment.headdb.paper.local.player.PlayerHeadEntry;
+import io.github.silentdevelopment.headdb.paper.message.MessageKey;
 import io.github.silentdevelopment.headdb.paper.permission.Permissions;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -28,6 +29,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -182,19 +184,19 @@ public final class CategoryHeadPickerMenu {
 
     private static void promptId(@NotNull HeadDBPlugin plugin, @NotNull Player player, @NotNull String categoryId) {
         player.closeInventory();
-        plugin.prompts().request(player, Component.text("Enter a head id to add.", NamedTextColor.GOLD), value -> {
+        plugin.prompts().request(player, plugin.messages().render(player, MessageKey.GUI_CATEGORY_HEAD_PROMPT), value -> {
             HeadId id;
             try {
                 id = parseHeadId(value);
             } catch (IllegalArgumentException exception) {
-                player.sendMessage(Component.text(exception.getMessage(), NamedTextColor.RED));
+                player.sendMessage(plugin.messages().invalidArgument(player, exception));
                 open(plugin, player, categoryId, 0);
                 return;
             }
 
             boolean exists = id.isCustom() ? plugin.headRegistry().customHeads().findStored(id).isPresent() : plugin.headRegistry().find(id).isPresent();
             if (!exists) {
-                player.sendMessage(Component.text("Unknown head: ", NamedTextColor.RED).append(Component.text(id.display(), NamedTextColor.GOLD)));
+                player.sendMessage(plugin.messages().unknownHead(player, id));
                 open(plugin, player, categoryId, 0);
                 return;
             }
@@ -205,7 +207,7 @@ public final class CategoryHeadPickerMenu {
 
     private static void add(@NotNull HeadDBPlugin plugin, @NotNull Player player, @NotNull String categoryId, @NotNull HeadId id) {
         plugin.customCategories().addHead(categoryId, id);
-        player.sendMessage(Component.text("Head added: ", NamedTextColor.GRAY).append(Component.text(GuiLabels.head(plugin, player, id), NamedTextColor.GOLD)));
+        player.sendMessage(plugin.messages().render(player, MessageKey.GUI_CATEGORY_HEAD_ADDED, Map.of("head", GuiLabels.head(plugin, player, id))));
         CategoryMembersMenu.open(plugin, player, categoryId, 0);
     }
 

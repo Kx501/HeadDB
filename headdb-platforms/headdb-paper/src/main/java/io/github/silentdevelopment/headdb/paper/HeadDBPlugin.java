@@ -32,6 +32,7 @@ import io.github.silentdevelopment.headdb.paper.local.taxonomy.CustomTaxonomySer
 import io.github.silentdevelopment.headdb.paper.local.storage.NoopLocalStores;
 import io.github.silentdevelopment.headdb.paper.message.Messages;
 import io.github.silentdevelopment.headdb.paper.metrics.HeadDBMetrics;
+import io.github.silentdevelopment.headdb.paper.placeholder.HeadExpansion;
 import io.github.silentdevelopment.headdb.paper.prompt.PromptInputService;
 import io.github.silentdevelopment.headdb.paper.runtime.PlatformRequirements;
 import io.github.silentdevelopment.headdb.paper.runtime.PluginRuntime;
@@ -91,6 +92,7 @@ public final class HeadDBPlugin extends JavaPlugin {
             getServer().getPluginManager().registerEvents(new HeadEditListener(this), this);
 
             registerCommands();
+            registerPlaceholders();
             cleanupSuccessfulUpdateBackup();
             startUpdater();
 
@@ -492,6 +494,14 @@ public final class HeadDBPlugin extends JavaPlugin {
 
     private void registerCommands() {
         new Commands(this).register();
+    }
+
+    private void registerPlaceholders() {
+        if (!getServer().getPluginManager().isPluginEnabled("PlaceholderAPI")) {
+            return;
+        }
+
+        new HeadExpansion(this).register();
     }
 
     public boolean isPaper() {

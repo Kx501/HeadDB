@@ -3,11 +3,14 @@ package io.github.silentdevelopment.headdb.paper.local.custom;
 import io.github.silentdevelopment.headdb.model.Head;
 import io.github.silentdevelopment.headdb.model.HeadId;
 import io.github.silentdevelopment.headdb.model.HeadTexture;
+import io.github.silentdevelopment.headdb.paper.message.MessageException;
+import io.github.silentdevelopment.headdb.paper.message.MessageKey;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
@@ -55,7 +58,7 @@ public record StoredCustomHead(
         }
 
         id = normalizeSlug(id);
-        name = requireText(name, "Custom head name");
+        name = requireText(name, MessageKey.COMMAND_ERROR_CUSTOM_NAME_EMPTY);
         textureHash = requireTextureHash(textureHash);
         textureSignature = textureSignature == null || textureSignature.isBlank() ? null : textureSignature.trim();
         lore = List.copyOf(lore);
@@ -112,7 +115,7 @@ public record StoredCustomHead(
         Objects.requireNonNull(value, "value");
         String normalized = value.trim().toLowerCase(java.util.Locale.ROOT).replace(' ', '-');
         if (normalized.isBlank()) {
-            throw new IllegalArgumentException("ID cannot be blank.");
+            throw new MessageException(MessageKey.COMMAND_ERROR_ID_BLANK);
         }
 
         for (int index = 0; index < normalized.length(); index++) {
@@ -120,29 +123,29 @@ public record StoredCustomHead(
             if ((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '-' || c == '_' || c == '.') {
                 continue;
             }
-            throw new IllegalArgumentException("ID contains an invalid character: " + c);
+            throw new MessageException(MessageKey.COMMAND_ERROR_ID_INVALID_CHARACTER, Map.of("character", String.valueOf(c)));
         }
 
         return normalized;
     }
 
-    private static @NotNull String requireText(@NotNull String value, @NotNull String name) {
+    private static @NotNull String requireText(@NotNull String value, @NotNull MessageKey key) {
         Objects.requireNonNull(value, "value");
         String normalized = value.trim();
         if (normalized.isEmpty()) {
-            throw new IllegalArgumentException(name + " cannot be empty.");
+            throw new MessageException(key);
         }
         return normalized;
     }
 
     private static @NotNull String requireTextureHash(@NotNull String value) {
-        String hash = requireText(value, "Texture hash").toLowerCase(java.util.Locale.ROOT);
+        String hash = requireText(value, MessageKey.COMMAND_ERROR_TEXTURE_HASH_EMPTY).toLowerCase(java.util.Locale.ROOT);
         for (int index = 0; index < hash.length(); index++) {
             char c = hash.charAt(index);
             if ((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f')) {
                 continue;
             }
-            throw new IllegalArgumentException("Texture hash must be hexadecimal.");
+            throw new MessageException(MessageKey.COMMAND_ERROR_TEXTURE_HASH_HEX);
         }
         return hash;
     }

@@ -9,7 +9,6 @@ import io.github.silentdevelopment.headdb.paper.local.taxonomy.CustomTaxonomyEnt
 import io.github.silentdevelopment.headdb.paper.message.MessageKey;
 import io.github.silentdevelopment.headdb.paper.permission.Permissions;
 import io.github.silentdevelopment.headdb.paper.sound.SoundKey;
-import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -123,17 +122,17 @@ public final class CreateTaxonomyMenu {
         }
 
         if (action.equals(ACTION_ID)) {
-            prompt(plugin, player, mode, "Enter the " + mode.displayName() + " id.", value -> draft.withId(value));
+            prompt(plugin, player, mode, MessageKey.GUI_TAXONOMY_ID_PROMPT, value -> draft.withId(value));
             return;
         }
 
         if (action.equals(ACTION_NAME)) {
-            prompt(plugin, player, mode, "Enter the " + mode.displayName() + " display name.", value -> draft.withName(value));
+            prompt(plugin, player, mode, MessageKey.GUI_TAXONOMY_NAME_PROMPT, value -> draft.withName(value));
             return;
         }
 
         if (action.equals(ACTION_DESCRIPTION)) {
-            prompt(plugin, player, mode, "Enter the " + mode.displayName() + " description.", value -> draft.withDescription(value));
+            prompt(plugin, player, mode, MessageKey.GUI_TAXONOMY_DESCRIPTION_PROMPT, value -> draft.withDescription(value));
             return;
         }
 
@@ -142,9 +141,9 @@ public final class CreateTaxonomyMenu {
         }
     }
 
-    private static void prompt(@NotNull HeadDBPlugin plugin, @NotNull Player player, @NotNull Mode mode, @NotNull String message, @NotNull Function<String, Draft> update) {
+    private static void prompt(@NotNull HeadDBPlugin plugin, @NotNull Player player, @NotNull Mode mode, @NotNull MessageKey message, @NotNull Function<String, Draft> update) {
         player.closeInventory();
-        plugin.prompts().request(player, Component.text(message, NamedTextColor.GOLD), value -> {
+        plugin.prompts().request(player, plugin.messages().render(player, message, Map.of("type", mode.displayName())), value -> {
             DRAFTS.put(new DraftKey(player.getUniqueId(), mode), update.apply(value));
             open(plugin, player, mode);
         }, () -> open(plugin, player, mode));
@@ -169,7 +168,7 @@ public final class CreateTaxonomyMenu {
             plugin.sounds().play(player, mode == Mode.TAG ? SoundKey.TAG_CREATE : SoundKey.COLLECTION_CREATE);
             back(plugin, player, mode);
         } catch (IllegalArgumentException exception) {
-            player.sendMessage(Component.text(exception.getMessage(), NamedTextColor.RED));
+            player.sendMessage(plugin.messages().invalidArgument(player, exception));
             plugin.sounds().play(player, SoundKey.VALIDATION_ERROR);
             open(plugin, player, mode);
         }

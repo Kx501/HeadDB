@@ -1,6 +1,7 @@
 package io.github.silentdevelopment.headdb.paper.prompt;
 
 import io.github.silentdevelopment.headdb.paper.HeadDBPlugin;
+import io.github.silentdevelopment.headdb.paper.message.MessageKey;
 import io.github.silentdevelopment.prompts.Prompt;
 import io.github.silentdevelopment.prompts.core.DefaultPrompt;
 import io.github.silentdevelopment.prompts.paper.PaperPrompts;
@@ -10,7 +11,6 @@ import io.github.silentdevelopment.prompts.parser.ParseResult;
 import io.github.silentdevelopment.prompts.result.PromptResult;
 import io.github.silentdevelopment.prompts.result.PromptResultStatus;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
@@ -23,15 +23,16 @@ public final class PromptInputService {
     private static final Duration DEFAULT_TIMEOUT = Duration.ofSeconds(45);
     private static final String CANCEL_TOKEN = "cancel";
 
+    private final HeadDBPlugin plugin;
     private final PaperPrompts prompts;
 
     public PromptInputService(@NotNull HeadDBPlugin plugin) {
-        Objects.requireNonNull(plugin, "plugin");
+        this.plugin = Objects.requireNonNull(plugin, "plugin");
         this.prompts = PaperPrompts.builder(plugin).transport(new PaperChatTransport(plugin)).build();
     }
 
     public void request(@NotNull Player player, @NotNull Component message, @NotNull Consumer<String> input) {
-        request(player, message, DEFAULT_TIMEOUT, input, () -> player.sendMessage(Component.text("Prompt cancelled.", NamedTextColor.GRAY)));
+        request(player, message, DEFAULT_TIMEOUT, input, () -> player.sendMessage(plugin.messages().render(player, MessageKey.GUI_PROMPT_CANCELLED)));
     }
 
     public void request(@NotNull Player player, @NotNull Component message, @NotNull Consumer<String> input, @NotNull Runnable cancel) {
@@ -45,7 +46,7 @@ public final class PromptInputService {
         Objects.requireNonNull(input, "input");
         Objects.requireNonNull(cancel, "cancel");
 
-        Component promptMessage = message.append(Component.text(" Type cancel to abort.", NamedTextColor.GRAY));
+        Component promptMessage = message.append(plugin.messages().render(player, MessageKey.GUI_PROMPT_HINT));
         Prompt<String> prompt = new DefaultPrompt<>(PaperPromptText.of(promptMessage), ParseResult::success, timeout, PaperChatTransport.DEFAULT_NAME);
 
         prompts.askReplacingAndHandleSync(player, prompt, result -> handle(result, input, cancel));

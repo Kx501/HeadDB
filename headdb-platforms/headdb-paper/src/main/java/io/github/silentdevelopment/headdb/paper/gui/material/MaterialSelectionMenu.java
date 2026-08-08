@@ -7,6 +7,7 @@ import io.github.silentdevelopment.headdb.paper.gui.common.GuiItems;
 import io.github.silentdevelopment.headdb.paper.gui.common.GuiMaterials;
 import io.github.silentdevelopment.headdb.paper.gui.common.GuiTitles;
 import io.github.silentdevelopment.headdb.paper.gui.config.GuiIconConfigEditor;
+import io.github.silentdevelopment.headdb.paper.message.MessageKey;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
@@ -23,6 +24,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -162,10 +164,10 @@ public final class MaterialSelectionMenu {
 
     private static void promptMaterial(@NotNull HeadDBPlugin plugin, @NotNull Player player, @NotNull MaterialTarget target) {
         player.closeInventory();
-        plugin.prompts().request(player, Component.text("Type a modern item material name.", NamedTextColor.GOLD), value -> {
+        plugin.prompts().request(player, plugin.messages().render(player, MessageKey.GUI_MATERIAL_PROMPT), value -> {
             Optional<Material> material = GuiMaterials.item(value);
             if (material.isEmpty()) {
-                player.sendMessage(Component.text("Unknown modern item material: ", NamedTextColor.RED).append(Component.text(value, NamedTextColor.GOLD)));
+                player.sendMessage(plugin.messages().render(player, MessageKey.GUI_MATERIAL_UNKNOWN, Map.of("material", value)));
                 reopenTarget(plugin, player, target);
                 return;
             }
@@ -177,7 +179,7 @@ public final class MaterialSelectionMenu {
     private static void apply(@NotNull HeadDBPlugin plugin, @NotNull Player player, @NotNull MaterialTarget target, @NotNull String material) {
         if (target.kind() == MaterialTargetKind.GUI_BUTTON) {
             new GuiIconConfigEditor(plugin).setMaterial(target.buttonKey(), material);
-            player.sendMessage(Component.text("Button material set to ", NamedTextColor.GRAY).append(Component.text(material, NamedTextColor.GOLD)));
+            player.sendMessage(plugin.messages().render(player, MessageKey.GUI_MATERIAL_SET, Map.of("material", material)));
             io.github.silentdevelopment.headdb.paper.gui.config.GuiButtonEditorMenu.open(plugin, player, target.buttonKey());
             return;
         }

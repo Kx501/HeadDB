@@ -1,6 +1,8 @@
 package io.github.silentdevelopment.headdb.paper.gui.category;
 
 import io.github.silentdevelopment.headdb.model.HeadId;
+import io.github.silentdevelopment.headdb.paper.message.MessageException;
+import io.github.silentdevelopment.headdb.paper.message.MessageKey;
 import org.jetbrains.annotations.NotNull;
 import org.sqlite.SQLiteDataSource;
 
@@ -15,6 +17,7 @@ import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -119,7 +122,7 @@ public final class CustomCategoryService {
 
     public synchronized void addHead(@NotNull String categoryId, @NotNull HeadId headId) {
         Objects.requireNonNull(headId, "headId");
-        CustomCategory category = find(categoryId).orElseThrow(() -> new IllegalArgumentException("Unknown custom category: " + categoryId));
+        CustomCategory category = find(categoryId).orElseThrow(() -> new MessageException(MessageKey.COMMAND_ERROR_UNKNOWN_CATEGORY, Map.of("category", categoryId)));
         LinkedHashSet<HeadId> ids = new LinkedHashSet<>(category.headIds());
         ids.add(headId);
         save(category.withHeadIds(ids));
@@ -127,7 +130,7 @@ public final class CustomCategoryService {
 
     public synchronized void removeHead(@NotNull String categoryId, @NotNull HeadId headId) {
         Objects.requireNonNull(headId, "headId");
-        CustomCategory category = find(categoryId).orElseThrow(() -> new IllegalArgumentException("Unknown custom category: " + categoryId));
+        CustomCategory category = find(categoryId).orElseThrow(() -> new MessageException(MessageKey.COMMAND_ERROR_UNKNOWN_CATEGORY, Map.of("category", categoryId)));
         LinkedHashSet<HeadId> ids = new LinkedHashSet<>(category.headIds());
         ids.remove(headId);
         save(category.withHeadIds(ids));
@@ -240,7 +243,7 @@ public final class CustomCategoryService {
     private static @NotNull String normalize(@NotNull String value) {
         String normalized = value.trim().toLowerCase(Locale.ROOT);
         if (normalized.isBlank()) {
-            throw new IllegalArgumentException("ID cannot be blank.");
+            throw new MessageException(MessageKey.COMMAND_ERROR_ID_BLANK);
         }
         return normalized;
     }

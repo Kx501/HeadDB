@@ -8,6 +8,7 @@ import io.github.silentdevelopment.headdb.paper.gui.common.GuiHeadIcons;
 import io.github.silentdevelopment.headdb.paper.gui.common.GuiItems;
 import io.github.silentdevelopment.headdb.paper.gui.common.GuiTitles;
 import io.github.silentdevelopment.headdb.paper.item.HeadItemIds;
+import io.github.silentdevelopment.headdb.paper.message.MessageKey;
 import io.github.silentdevelopment.headdb.paper.permission.Permissions;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -66,7 +67,7 @@ public final class FavoritesMenu {
         int pages = pageCount(heads.size());
         int page = clampPage(requestedPage, pages);
         FavoritesHolder holder = new FavoritesHolder(page);
-        Inventory inventory = Bukkit.createInventory(holder, SIZE, GuiTitles.title("Favorites " + (page + 1) + "/" + pages, plugin.adminModes().enabled(player)));
+        Inventory inventory = Bukkit.createInventory(holder, SIZE, GuiTitles.title(title(plugin, page, pages), plugin.adminModes().enabled(player)));
         holder.inventory(inventory);
 
         fillBorder(inventory);
@@ -157,8 +158,8 @@ public final class FavoritesMenu {
                 item.editMeta(meta -> {
                     List<Component> lore = meta.lore() == null ? new ArrayList<>() : new ArrayList<>(meta.lore());
                     lore.add(Component.empty());
-                    lore.add(GuiItems.idDetail("ID", headIdLabel(head.id())));
-                    lore.add(GuiItems.metaDetail("Category", head.category()));
+                    lore.add(GuiItems.idDetail(text(plugin, "label.id", "ID"), headIdLabel(head.id())));
+                    lore.add(GuiItems.metaDetail(text(plugin, "label.category", "Category"), head.category()));
                     meta.lore(lore);
                 });
             }
@@ -199,7 +200,7 @@ public final class FavoritesMenu {
 
         Optional<Head> head = plugin.headRegistry().find(id);
         if (head.isEmpty()) {
-            player.sendMessage(Component.text("Favorite head no longer exists.", NamedTextColor.RED));
+            player.sendMessage(plugin.messages().render(player, MessageKey.GUI_FAVORITE_MISSING));
             return;
         }
 
@@ -258,6 +259,16 @@ public final class FavoritesMenu {
     private static @NotNull String headIdLabel(@NotNull HeadId id) {
         Objects.requireNonNull(id, "id");
         return id.display();
+    }
+
+    private static @NotNull String title(@NotNull HeadDBPlugin plugin, int page, int pages) {
+        return text(plugin, "title.favorites-page", "Favorites %page%/%pages%")
+                .replace("%page%", String.valueOf(page + 1))
+                .replace("%pages%", String.valueOf(pages));
+    }
+
+    private static @NotNull String text(@NotNull HeadDBPlugin plugin, @NotNull String key, @NotNull String fallback) {
+        return plugin.guiConfig().text(key, fallback);
     }
 
     private static int pageCount(int entries) {

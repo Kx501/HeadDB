@@ -3,6 +3,7 @@ package io.github.silentdevelopment.headdb.paper.command.format;
 import io.github.silentdevelopment.headdb.database.DatabaseStats;
 import io.github.silentdevelopment.headdb.database.DatabaseStatus;
 import io.github.silentdevelopment.headdb.paper.HeadDBPlugin;
+import io.github.silentdevelopment.headdb.paper.message.Messages;
 import io.github.silentdevelopment.headdb.paper.permission.Permissions;
 import io.github.silentdevelopment.headdb.paper.runtime.RefreshState;
 import net.kyori.adventure.text.Component;
@@ -34,6 +35,7 @@ public final class StatusFormatter {
         DatabaseStatus status = plugin.runtime().database().status();
         DatabaseStats remoteStats = plugin.runtime().database().stats();
         RefreshState refresh = plugin.runtime().refreshState();
+        Messages messages = plugin.messages();
 
         int hiddenHeads = plugin.headRegistry().hiddenHeads().size();
         int moreHeads = plugin.headRegistry().customHeads().list().size();
@@ -43,70 +45,74 @@ public final class StatusFormatter {
 
         List<Component> lines = new ArrayList<>();
         lines.add(Component.empty());
-        lines.add(Component.text("> ", NamedTextColor.DARK_GRAY).append(Component.text("Status", NamedTextColor.RED)));
-        lines.add(databaseLine(status));
-        lines.add(line("Heads", remoteStats.heads()));
-        lines.add(line("Hidden Heads", hiddenHeads));
-        lines.add(line("More Heads", moreHeads));
-        lines.add(line("Player Heads", playerHeads));
-        lines.add(line("Categories", remoteStats.categories()));
-        lines.add(line("More Categories", moreCategories));
-        lines.add(line("Tags", remoteStats.tags()));
-        lines.add(line("Collections", remoteStats.collections()));
-        lines.add(line("Revocations", remoteStats.revocations()));
-        lines.add(line("Overrides", overrides));
-        lines.add(refreshLine(refresh, sender));
-        lines.add(lastRefreshLine(refresh));
+        lines.add(Component.text("> ", NamedTextColor.DARK_GRAY).append(Component.text(text(messages, sender, "title", "Status"), NamedTextColor.RED)));
+        lines.add(databaseLine(messages, sender, status));
+        lines.add(line(text(messages, sender, "label.heads", "Heads"), remoteStats.heads()));
+        lines.add(line(text(messages, sender, "label.hidden-heads", "Hidden Heads"), hiddenHeads));
+        lines.add(line(text(messages, sender, "label.more-heads", "More Heads"), moreHeads));
+        lines.add(line(text(messages, sender, "label.player-heads", "Player Heads"), playerHeads));
+        lines.add(line(text(messages, sender, "label.categories", "Categories"), remoteStats.categories()));
+        lines.add(line(text(messages, sender, "label.more-categories", "More Categories"), moreCategories));
+        lines.add(line(text(messages, sender, "label.tags", "Tags"), remoteStats.tags()));
+        lines.add(line(text(messages, sender, "label.collections", "Collections"), remoteStats.collections()));
+        lines.add(line(text(messages, sender, "label.revocations", "Revocations"), remoteStats.revocations()));
+        lines.add(line(text(messages, sender, "label.overrides", "Overrides"), overrides));
+        lines.add(refreshLine(messages, refresh, sender));
+        lines.add(lastRefreshLine(messages, sender, refresh));
 
         String failure = firstPresent(status.lastError(), refresh.lastFailureMessage());
         if (failure != null) {
-            lines.add(line("Last error", failure));
+            lines.add(line(text(messages, sender, "label.last-error", "Last error"), failure));
         }
 
-        addSupportLine(lines, sender);
+        addSupportLine(lines, messages, sender);
         lines.add(Component.empty());
         return List.copyOf(lines);
     }
 
-    private static @NotNull Component databaseLine(@NotNull DatabaseStatus status) {
-        Component line = Component.text("Database: ", NamedTextColor.GRAY).append(Component.text(String.valueOf(status.state()), statusColor(status)));
-        String source = value(status.source());
+    private static @NotNull Component databaseLine(@NotNull Messages messages, @NotNull CommandSender sender, @NotNull DatabaseStatus status) {
+        Component line = Component.text(text(messages, sender, "label.database", "Database") + ": ", NamedTextColor.GRAY).append(Component.text(String.valueOf(status.state()), statusColor(status)));
+        String source = normalize(status.source() == null ? null : String.valueOf(status.source()));
 
-        if (!source.equals("none")) {
-            line = line.append(Component.text(" from ", NamedTextColor.GRAY)).append(Component.text(source, NamedTextColor.GOLD));
+        if (source != null) {
+            line = line.append(Component.text(" " + text(messages, sender, "from", "from") + " ", NamedTextColor.GRAY)).append(Component.text(source, NamedTextColor.GOLD));
         }
 
         return line;
     }
 
-    private static @NotNull Component refreshLine(@NotNull RefreshState refresh, @NotNull CommandSender sender) {
-        String text = refresh.running() ? "running " + refresh.currentOperation() : "idle";
-        Component line = line("Refresh", text);
+    private static @NotNull Component refreshLine(@NotNull Messages messages, @NotNull RefreshState refresh, @NotNull CommandSender sender) {
+        String state = refresh.running()
+                ? text(messages, sender, "value.running", "running") + " " + refresh.currentOperation()
+                : text(messages, sender, "value.idle", "idle");
+        Component line = line(text(messages, sender, "label.refresh", "Refresh"), state);
 
         if (!refresh.running() && Permissions.has(sender, Permissions.REFRESH)) {
-            line = line.append(Component.text("  ")).append(refreshButton());
+            line = line.append(Component.text("  ")).append(refreshButton(messages, sender));
         }
 
         return line;
     }
 
-    private static @NotNull Component lastRefreshLine(@NotNull RefreshState refresh) {
+    private static @NotNull Component lastRefreshLine(@NotNull Messages messages, @NotNull CommandSender sender, @NotNull RefreshState refresh) {
+        String label = text(messages, sender, "label.last-refresh", "Last Refresh");
+
         if (refresh.lastOutcome() == RefreshState.RefreshOutcome.SUCCESS) {
-            return line("Last Refresh", refresh.lastOperation() + " completed at " + formatInstant(refresh.lastSuccessfulRefresh()));
+            return line(label, refresh.lastOperation() + " " + text(messages, sender, "value.completed-at", "completed at") + " " + formatInstant(messages, sender, refresh.lastSuccessfulRefresh()));
         }
 
         if (refresh.lastOutcome() == RefreshState.RefreshOutcome.FAILURE) {
-            return line("Last Refresh", refresh.lastOperation() + " failed at " + formatInstant(refresh.lastFailedRefresh()));
+            return line(label, refresh.lastOperation() + " " + text(messages, sender, "value.failed-at", "failed at") + " " + formatInstant(messages, sender, refresh.lastFailedRefresh()));
         }
 
-        return line("Last Refresh", "never");
+        return line(label, text(messages, sender, "value.never", "never"));
     }
 
-    private static @NotNull Component refreshButton() {
-        return Component.text("[ ", NamedTextColor.DARK_GRAY).append(Component.text("REFRESH", NamedTextColor.GOLD).clickEvent(ClickEvent.runCommand("/hdb refresh")).hoverEvent(HoverEvent.showText(Component.text("Click to refresh the database.", NamedTextColor.GRAY)))).append(Component.text(" ]", NamedTextColor.DARK_GRAY));
+    private static @NotNull Component refreshButton(@NotNull Messages messages, @NotNull CommandSender sender) {
+        return Component.text("[ ", NamedTextColor.DARK_GRAY).append(Component.text(text(messages, sender, "button.refresh", "REFRESH"), NamedTextColor.GOLD).clickEvent(ClickEvent.runCommand("/hdb refresh")).hoverEvent(HoverEvent.showText(Component.text(text(messages, sender, "button.refresh-hover", "Click to refresh the database."), NamedTextColor.GRAY)))).append(Component.text(" ]", NamedTextColor.DARK_GRAY));
     }
 
-    private static void addSupportLine(@NotNull List<Component> lines, @NotNull CommandSender sender) {
+    private static void addSupportLine(@NotNull List<Component> lines, @NotNull Messages messages, @NotNull CommandSender sender) {
         boolean canDebug = Permissions.has(sender, Permissions.DEBUG);
         boolean canReport = Permissions.has(sender, Permissions.REPORT);
 
@@ -114,7 +120,7 @@ public final class StatusFormatter {
             return;
         }
 
-        Component line = Component.text("Support: ", NamedTextColor.GRAY);
+        Component line = Component.text(text(messages, sender, "label.support", "Support") + ": ", NamedTextColor.GRAY);
 
         if (canDebug) {
             line = line.append(Component.text("/hdb debug", NamedTextColor.GOLD));
@@ -149,25 +155,16 @@ public final class StatusFormatter {
         return Component.text(key + ": ", NamedTextColor.GRAY).append(Component.text(String.valueOf(value), NamedTextColor.GOLD));
     }
 
-    private static @NotNull String formatInstant(@Nullable Instant instant) {
+    private static @NotNull String formatInstant(@NotNull Messages messages, @NotNull CommandSender sender, @Nullable Instant instant) {
         if (instant == null) {
-            return "never";
+            return text(messages, sender, "value.never", "never");
         }
 
         return TIME_FORMAT.format(instant);
     }
 
-    private static @NotNull String value(@Nullable Object value) {
-        if (value == null) {
-            return "none";
-        }
-
-        String string = String.valueOf(value);
-        if (string.isBlank()) {
-            return "none";
-        }
-
-        return string;
+    private static @NotNull String text(@NotNull Messages messages, @NotNull CommandSender sender, @NotNull String key, @NotNull String fallback) {
+        return messages.text(sender, "command.status." + key, fallback);
     }
 
     private static @Nullable String firstPresent(@Nullable String first, @Nullable String second) {

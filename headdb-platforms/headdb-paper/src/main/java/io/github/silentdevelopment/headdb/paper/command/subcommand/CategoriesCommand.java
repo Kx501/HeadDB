@@ -38,7 +38,9 @@ public final class CategoriesCommand extends AbstractPaperCommand {
                 .map(category -> new ListFormatter.Entry(category.id(), category.name()))
                 .toList();
 
-        for (var line : ListFormatter.format("Head Categories", entries, page, PAGE_SIZE)) {
+        String title = plugin.messages().text(context.sender(), "command.list.categories", "Head Categories");
+
+        for (var line : ListFormatter.format(plugin.messages(), context.sender(), title, entries, page, PAGE_SIZE)) {
             plugin.messages().send(context.sender(), line);
         }
     }

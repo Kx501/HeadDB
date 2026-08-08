@@ -153,27 +153,27 @@ public final class CreateCategoryMenu {
         }
 
         if (action.equals(ACTION_NAME)) {
-            prompt(plugin, player, category, "Enter the category display name.", value -> category.withName(value));
+            prompt(plugin, player, category, MessageKey.GUI_CATEGORY_DISPLAY_NAME_PROMPT, value -> category.withName(value));
             return;
         }
 
         if (action.equals(ACTION_DESCRIPTION)) {
-            prompt(plugin, player, category, "Enter the category description.", value -> category.withDescription(value));
+            prompt(plugin, player, category, MessageKey.GUI_CATEGORY_DESCRIPTION_PROMPT, value -> category.withDescription(value));
             return;
         }
 
         if (action.equals(ACTION_MATERIAL)) {
-            prompt(plugin, player, category, "Enter a Bukkit material name for the icon.", value -> category.withMaterial(value));
+            prompt(plugin, player, category, MessageKey.GUI_CATEGORY_MATERIAL_PROMPT, value -> category.withMaterial(value));
             return;
         }
 
         if (action.equals(ACTION_HEAD_ICON)) {
-            prompt(plugin, player, category, "Enter a head id for the icon, or none to clear.", value -> headIcon(plugin, player, category, value));
+            prompt(plugin, player, category, MessageKey.GUI_CATEGORY_HEAD_ICON_PROMPT, value -> headIcon(plugin, player, category, value));
             return;
         }
 
         if (action.equals(ACTION_PERMISSION)) {
-            player.sendMessage(Component.text("Permission: ", NamedTextColor.GRAY).append(Component.text(Permissions.category(category.id()), NamedTextColor.GOLD)));
+            player.sendMessage(plugin.messages().render(player, MessageKey.GUI_CATEGORY_PERMISSION, Map.of("permission", Permissions.category(category.id()))));
             openExisting(plugin, player, category.id());
             return;
         }
@@ -185,7 +185,7 @@ public final class CreateCategoryMenu {
 
         if (action.equals(ACTION_SAVE_DRAFT)) {
             plugin.customCategories().save(category.withDraft(true));
-            player.sendMessage(Component.text("Category draft saved: ", NamedTextColor.GRAY).append(Component.text(categoryLabel(plugin, player, category), NamedTextColor.GOLD)));
+            player.sendMessage(plugin.messages().render(player, MessageKey.GUI_CATEGORY_DRAFT_SAVED, Map.of("name", categoryLabel(plugin, player, category))));
             plugin.sounds().play(player, SoundKey.SAVE_DRAFT);
             openExisting(plugin, player, category.id());
             return;
@@ -195,7 +195,7 @@ public final class CreateCategoryMenu {
             plugin.customCategories().save(category.withDraft(false));
             ACTIVE_DRAFTS.remove(player.getUniqueId());
             plugin.clearSearchCache();
-            player.sendMessage(Component.text("Category published: ", NamedTextColor.GRAY).append(Component.text(categoryLabel(plugin, player, category), NamedTextColor.GOLD)));
+            player.sendMessage(plugin.messages().render(player, MessageKey.GUI_CATEGORY_PUBLISHED, Map.of("name", categoryLabel(plugin, player, category))));
             plugin.sounds().play(player, SoundKey.PUBLISH);
             openExisting(plugin, player, category.id());
             return;
@@ -219,22 +219,22 @@ public final class CreateCategoryMenu {
 
         HeadId id = trimmed.matches("[1-9][0-9]*") ? HeadId.remote(trimmed) : new HeadId(trimmed);
         if (plugin.headRegistry().find(id).isEmpty()) {
-            player.sendMessage(Component.text("Unknown head: ", NamedTextColor.RED).append(Component.text(id.display(), NamedTextColor.GOLD)));
+            player.sendMessage(plugin.messages().unknownHead(player, id));
             return category;
         }
 
         return category.withMaterial("HEAD:" + id);
     }
 
-    private static void prompt(@NotNull HeadDBPlugin plugin, @NotNull Player player, @NotNull CustomCategory category, @NotNull String message, @NotNull java.util.function.Function<String, CustomCategory> update) {
+    private static void prompt(@NotNull HeadDBPlugin plugin, @NotNull Player player, @NotNull CustomCategory category, @NotNull MessageKey message, @NotNull java.util.function.Function<String, CustomCategory> update) {
         player.closeInventory();
-        plugin.prompts().request(player, Component.text(message, NamedTextColor.GOLD), value -> {
+        plugin.prompts().request(player, plugin.messages().render(player, message), value -> {
             try {
                 CustomCategory updated = update.apply(value).withDraft(true);
                 plugin.customCategories().save(updated);
                 openExisting(plugin, player, updated.id());
             } catch (IllegalArgumentException exception) {
-                player.sendMessage(Component.text(exception.getMessage(), NamedTextColor.RED));
+                player.sendMessage(plugin.messages().invalidArgument(player, exception));
                 plugin.sounds().play(player, SoundKey.VALIDATION_ERROR);
                 openExisting(plugin, player, category.id());
             }
@@ -303,7 +303,7 @@ public final class CreateCategoryMenu {
         }
 
         player.closeInventory();
-        plugin.prompts().request(player, Component.text("Enter the new category price, or 0 to clear.", NamedTextColor.GOLD), value -> {
+        plugin.prompts().request(player, plugin.messages().render(player, MessageKey.GUI_CATEGORY_PRICE_PROMPT), value -> {
             try {
                 double price = Double.parseDouble(value.trim());
                 plugin.economy().setCustomCategoryPrice(category.id(), price);
@@ -313,7 +313,7 @@ public final class CreateCategoryMenu {
                 player.sendMessage(plugin.messages().priceInvalid(player));
                 plugin.sounds().play(player, SoundKey.PRICE_FAILURE);
             } catch (RuntimeException exception) {
-                player.sendMessage(Component.text("Failed to update category price: " + exception.getMessage(), NamedTextColor.RED));
+                player.sendMessage(plugin.messages().render(player, MessageKey.GUI_CATEGORY_PRICE_FAILED, Map.of("message", String.valueOf(exception.getMessage()))));
                 plugin.sounds().play(player, SoundKey.PRICE_FAILURE);
             }
 

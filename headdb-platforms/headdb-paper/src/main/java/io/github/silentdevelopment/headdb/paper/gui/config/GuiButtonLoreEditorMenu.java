@@ -5,6 +5,7 @@ import io.github.silentdevelopment.headdb.paper.HeadDBPlugin;
 import io.github.silentdevelopment.headdb.paper.gui.common.GuiHeadIcons;
 import io.github.silentdevelopment.headdb.paper.gui.common.GuiItems;
 import io.github.silentdevelopment.headdb.paper.gui.common.GuiTitles;
+import io.github.silentdevelopment.headdb.paper.message.MessageKey;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
@@ -20,6 +21,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -140,7 +142,7 @@ public final class GuiButtonLoreEditorMenu {
         }
 
         if (action.equals(ACTION_ADD)) {
-            prompt(plugin, player, holder.key(), "Enter the lore line to add.", value -> {
+            prompt(plugin, player, holder.key(), plugin.messages().render(player, MessageKey.GUI_BUTTON_LORE_ADD_PROMPT), value -> {
                 List<String> lines = new ArrayList<>(plugin.guiConfig().iconOrDefault(holder.key(), fallbackKey(holder.key())).lore());
                 lines.add(value);
                 editor.setLore(holder.key(), lines);
@@ -150,14 +152,14 @@ public final class GuiButtonLoreEditorMenu {
 
         if (action.equals(ACTION_CLEAR)) {
             editor.clearLore(holder.key());
-            player.sendMessage(Component.text("Button lore cleared.", NamedTextColor.GRAY));
+            player.sendMessage(plugin.messages().render(player, MessageKey.GUI_BUTTON_LORE_CLEARED));
             open(plugin, player, holder.key(), 0);
             return;
         }
 
         if (action.equals(ACTION_RESET)) {
             editor.clearLore(holder.key());
-            player.sendMessage(Component.text("Button lore reset.", NamedTextColor.GRAY));
+            player.sendMessage(plugin.messages().render(player, MessageKey.GUI_BUTTON_LORE_RESET));
             open(plugin, player, holder.key(), 0);
             return;
         }
@@ -176,12 +178,12 @@ public final class GuiButtonLoreEditorMenu {
         if (click == ClickType.DROP || click == ClickType.CONTROL_DROP) {
             lines.remove(index);
             editor.setLore(holder.key(), lines);
-            player.sendMessage(Component.text("Button lore line removed.", NamedTextColor.GRAY));
+            player.sendMessage(plugin.messages().render(player, MessageKey.GUI_BUTTON_LORE_LINE_REMOVED));
             open(plugin, player, holder.key(), holder.page());
             return;
         }
 
-        prompt(plugin, player, holder.key(), "Enter replacement text for lore line " + (index + 1) + ".", value -> {
+        prompt(plugin, player, holder.key(), plugin.messages().render(player, MessageKey.GUI_BUTTON_LORE_EDIT_PROMPT, Map.of("line", String.valueOf(index + 1))), value -> {
             List<String> updated = new ArrayList<>(plugin.guiConfig().iconOrDefault(holder.key(), fallbackKey(holder.key())).lore());
             if (index >= 0 && index < updated.size()) {
                 updated.set(index, value);
@@ -190,11 +192,11 @@ public final class GuiButtonLoreEditorMenu {
         });
     }
 
-    private static void prompt(@NotNull HeadDBPlugin plugin, @NotNull Player player, @NotNull String key, @NotNull String message, @NotNull java.util.function.Consumer<String> edit) {
+    private static void prompt(@NotNull HeadDBPlugin plugin, @NotNull Player player, @NotNull String key, @NotNull Component message, @NotNull java.util.function.Consumer<String> edit) {
         player.closeInventory();
-        plugin.prompts().request(player, Component.text(message, NamedTextColor.GOLD), value -> {
+        plugin.prompts().request(player, message, value -> {
             edit.accept(value);
-            player.sendMessage(Component.text("Button lore updated: ", NamedTextColor.GRAY).append(Component.text(key, NamedTextColor.GOLD)));
+            player.sendMessage(plugin.messages().render(player, MessageKey.GUI_BUTTON_LORE_UPDATED, Map.of("button", key)));
             open(plugin, player, key, 0);
         }, () -> open(plugin, player, key, 0));
     }

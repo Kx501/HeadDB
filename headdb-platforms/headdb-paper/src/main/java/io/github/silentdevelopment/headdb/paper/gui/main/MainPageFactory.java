@@ -21,8 +21,6 @@ import io.github.silentdevelopment.headdb.paper.search.SearchRequest;
 import io.github.silentdevelopment.headdb.query.HeadSort;
 import io.github.silentdevelopment.headdb.query.SortDirection;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
-import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.MenuType;
@@ -31,6 +29,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
@@ -115,17 +114,17 @@ public final class MainPageFactory implements PaperPageFactory<MenuState> {
         DatabaseStatus status = plugin.runtime().database().status();
         DatabaseStats stats = status.stats();
         List<Component> lore = new ArrayList<>();
-        lore.add(GuiItems.idDetail("Heads", stats.heads()));
-        lore.add(GuiItems.idDetail("Categories", stats.categories()));
-        lore.add(GuiItems.idDetail("Tags", stats.tags()));
-        lore.add(GuiItems.idDetail("Collections", stats.collections()));
+        lore.add(GuiItems.idDetail(text("label.heads", "Heads"), stats.heads()));
+        lore.add(GuiItems.idDetail(text("label.categories", "Categories"), stats.categories()));
+        lore.add(GuiItems.idDetail(text("label.tags", "Tags"), stats.tags()));
+        lore.add(GuiItems.idDetail(text("label.collections", "Collections"), stats.collections()));
 
         if (adminMode) {
             lore.add(Component.empty());
-            lore.add(GuiItems.metaDetail("State", status.state()));
-            lore.add(GuiItems.metaDetail("Source", status.source()));
-            lore.add(GuiItems.idDetail("Visible categories", visibleCategories));
-            lore.add(GuiItems.idDetail("Hidden heads", plugin.headRegistry().hiddenHeads().size()));
+            lore.add(GuiItems.metaDetail(text("label.state", "State"), status.state()));
+            lore.add(GuiItems.metaDetail(text("label.source", "Source"), status.source()));
+            lore.add(GuiItems.idDetail(text("label.visible-categories", "Visible categories"), visibleCategories));
+            lore.add(GuiItems.idDetail(text("label.hidden-heads", "Hidden heads"), plugin.headRegistry().hiddenHeads().size()));
         }
 
         return GuiHeadIcons.<MenuState>button(plugin, "main_info", "info", GuiItems.mini(plugin.guiConfig().icon("info").name()), lore, ignored -> {});
@@ -144,7 +143,7 @@ public final class MainPageFactory implements PaperPageFactory<MenuState> {
             }
 
             player.closeInventory();
-            plugin.prompts().request(player, Component.text("Enter a search query.", NamedTextColor.GOLD), query -> {
+            plugin.prompts().request(player, plugin.messages().render(player, MessageKey.GUI_SEARCH_PROMPT), query -> {
                 sendSearchQueryInfo(player, query);
                 plugin.guis().openSearch(player, new SearchRequest(query, Set.of(), Set.of(), Set.of(), Set.of(), HeadSort.RELEVANCE, SortDirection.DESCENDING, 1, 28, false));
             }, () -> sendSearchCancelled(player));
@@ -213,9 +212,13 @@ public final class MainPageFactory implements PaperPageFactory<MenuState> {
         List<Component> lore = new ArrayList<>(GuiItems.miniLore(plugin.guiConfig().icon(iconKey).lore()));
         if (adminMode(context)) {
             lore.add(Component.empty());
-            lore.add(GuiItems.idDetail("Heads", heads));
+            lore.add(GuiItems.idDetail(text("label.heads", "Heads"), heads));
         }
         return List.copyOf(lore);
+    }
+
+    private @NotNull String text(@NotNull String key, @NotNull String fallback) {
+        return plugin.guiConfig().text(key, fallback);
     }
 
     private boolean adminMode(@NotNull GuiContext<MenuState> context) {
@@ -246,17 +249,17 @@ public final class MainPageFactory implements PaperPageFactory<MenuState> {
         return Bukkit.getPlayer(context.source().viewerId());
     }
 
-    private static void sendSearchQueryInfo(@NotNull Player player, @NotNull String query) {
+    private void sendSearchQueryInfo(@NotNull Player player, @NotNull String query) {
         Objects.requireNonNull(player, "player");
         Objects.requireNonNull(query, "query");
-        player.sendMessage(Component.text("Search Info", NamedTextColor.GOLD, TextDecoration.BOLD));
-        player.sendMessage(Component.text("Query: ", NamedTextColor.GRAY).append(Component.text(query, NamedTextColor.WHITE)));
-        player.sendMessage(Component.text("Sort: ", NamedTextColor.GRAY).append(Component.text("relevance descending", NamedTextColor.AQUA)));
+        player.sendMessage(plugin.messages().render(player, MessageKey.GUI_SEARCH_INFO_HEADER));
+        player.sendMessage(plugin.messages().render(player, MessageKey.GUI_SEARCH_INFO_QUERY, Map.of("query", query)));
+        player.sendMessage(plugin.messages().render(player, MessageKey.GUI_SEARCH_INFO_SORT));
     }
 
-    private static void sendSearchCancelled(@NotNull Player player) {
+    private void sendSearchCancelled(@NotNull Player player) {
         Objects.requireNonNull(player, "player");
-        player.sendMessage(Component.text("Search cancelled.", NamedTextColor.GRAY));
+        player.sendMessage(plugin.messages().render(player, MessageKey.GUI_SEARCH_CANCELLED));
     }
 
     private static void set(@NotNull PaperPageBuilder<MenuState> page, @NotNull Set<Integer> reservedSlots, int slot, @NotNull ItemElement<MenuState> element) {

@@ -6,6 +6,8 @@ import io.github.silentdevelopment.headdb.paper.HeadDBPlugin;
 import io.github.silentdevelopment.headdb.paper.command.CommandRequirements;
 import io.github.silentdevelopment.headdb.paper.command.Suggestions;
 import io.github.silentdevelopment.headdb.paper.command.search.SearchParser;
+import io.github.silentdevelopment.headdb.paper.message.MessageException;
+import io.github.silentdevelopment.headdb.paper.message.MessageKey;
 import io.github.silentdevelopment.headdb.paper.permission.Permissions;
 import io.github.silentdevelopment.headdb.paper.sound.SoundKey;
 import io.github.silentdevelopment.relay.argument.Argument;
@@ -43,7 +45,7 @@ public final class GiveCommand extends AbstractPaperCommand {
         try {
             request = request(context);
         } catch (IllegalArgumentException exception) {
-            plugin.messages().send(context.sender(), plugin.messages().invalidArgument(context.sender(), exception.getMessage()));
+            plugin.messages().send(context.sender(), plugin.messages().invalidArgument(context.sender(), exception));
             play(context, SoundKey.INVALID);
             return;
         }
@@ -81,13 +83,13 @@ public final class GiveCommand extends AbstractPaperCommand {
         String first = context.get(FIRST).trim();
 
         if (first.isEmpty()) {
-            throw new IllegalArgumentException(usage());
+            throw new MessageException(MessageKey.COMMAND_USAGE_GIVE_FULL);
         }
 
         HeadId firstId = parseOptionalHeadId(first);
         if (!context.has(SECOND)) {
             if (firstId == null) {
-                throw new IllegalArgumentException(usage());
+                throw new MessageException(MessageKey.COMMAND_USAGE_GIVE_FULL);
             }
 
             return new GiveRequest(firstId, null, 1);
@@ -95,7 +97,7 @@ public final class GiveCommand extends AbstractPaperCommand {
 
         String second = context.get(SECOND).trim();
         if (second.isEmpty()) {
-            throw new IllegalArgumentException(usage());
+            throw new MessageException(MessageKey.COMMAND_USAGE_GIVE_FULL);
         }
 
         HeadId secondId = parseOptionalHeadId(second);
@@ -116,10 +118,10 @@ public final class GiveCommand extends AbstractPaperCommand {
         }
 
         if (firstId != null) {
-            throw new IllegalArgumentException("Ambiguous give command. Use /hdb give <id> <player> [amount] with a non-ID player name.");
+            throw new MessageException(MessageKey.COMMAND_ERROR_AMBIGUOUS_GIVE);
         }
 
-        throw new IllegalArgumentException(usage());
+        throw new MessageException(MessageKey.COMMAND_USAGE_GIVE_FULL);
     }
 
     private @NotNull GiveRequest requestWithExplicitAmount(@NotNull String first, @Nullable HeadId firstId, @NotNull String second, @Nullable HeadId secondId, @NotNull String rawAmount) {
@@ -134,10 +136,10 @@ public final class GiveCommand extends AbstractPaperCommand {
         }
 
         if (firstId != null) {
-            throw new IllegalArgumentException("Ambiguous give command. Use /hdb give <id> <player> <amount> with a non-ID player name.");
+            throw new MessageException(MessageKey.COMMAND_ERROR_AMBIGUOUS_GIVE_AMOUNT);
         }
 
-        throw new IllegalArgumentException(usage());
+        throw new MessageException(MessageKey.COMMAND_USAGE_GIVE_FULL);
     }
 
     private @Nullable Player resolveTarget(@NotNull PaperCommandContext context, @Nullable String targetName) {
@@ -185,7 +187,7 @@ public final class GiveCommand extends AbstractPaperCommand {
             try {
                 item = plugin.itemFactory().create(head);
             } catch (IllegalArgumentException exception) {
-                plugin.messages().send(context.sender(), plugin.messages().invalidArgument(context.sender(), exception.getMessage()));
+                plugin.messages().send(context.sender(), plugin.messages().invalidArgument(context.sender(), exception));
                 play(context, SoundKey.INVALID);
                 return;
             }
@@ -246,18 +248,14 @@ public final class GiveCommand extends AbstractPaperCommand {
         try {
             amount = Integer.parseInt(raw.trim());
         } catch (NumberFormatException exception) {
-            throw new IllegalArgumentException("Amount must be a number.");
+            throw new MessageException(MessageKey.COMMAND_ERROR_AMOUNT_NUMBER);
         }
 
         if (amount < 1 || amount > MAX_AMOUNT) {
-            throw new IllegalArgumentException("Amount must be between 1 and " + MAX_AMOUNT + ".");
+            throw new MessageException(MessageKey.COMMAND_ERROR_AMOUNT_RANGE, Map.of("max", String.valueOf(MAX_AMOUNT)));
         }
 
         return amount;
-    }
-
-    private static @NotNull String usage() {
-        return "Usage: /hdb give <id> [player] [amount] or /hdb give <player> <id> [amount]";
     }
 
     private record GiveRequest(@NotNull HeadId id, @Nullable String targetName, int amount) {

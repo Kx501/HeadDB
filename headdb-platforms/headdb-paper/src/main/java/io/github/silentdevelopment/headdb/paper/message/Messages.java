@@ -10,6 +10,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextReplacementConfig;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.command.RemoteConsoleCommandSender;
@@ -51,6 +52,16 @@ public final class Messages {
 
     public @NotNull Component invalidArgument(@NotNull CommandSender receiver, @NotNull String message) {
         return render(receiver, MessageKey.COMMAND_ERROR_INVALID_ARGUMENT, Map.of("message", message));
+    }
+
+    public @NotNull Component invalidArgument(@NotNull CommandSender receiver, @NotNull IllegalArgumentException exception) {
+        Objects.requireNonNull(exception, "exception");
+
+        if (exception instanceof MessageException messaged) {
+            return render(receiver, messaged.key(), messaged.placeholders());
+        }
+
+        return invalidArgument(receiver, String.valueOf(exception.getMessage()));
     }
 
     public @NotNull Component unknownHead(@NotNull CommandSender receiver, @NotNull HeadId id) {
@@ -119,10 +130,6 @@ public final class Messages {
 
     public @NotNull Component itemCacheUsage(@NotNull CommandSender receiver) {
         return render(receiver, MessageKey.COMMAND_USAGE_ITEMCACHE);
-    }
-
-    public @NotNull Component searchGuiNotReady(@NotNull CommandSender receiver) {
-        return render(receiver, MessageKey.COMMAND_ERROR_SEARCH_GUI_NOT_READY);
     }
 
     public @NotNull Component unknownCategory(@NotNull CommandSender receiver, @NotNull String category) {
@@ -231,6 +238,20 @@ public final class Messages {
         }
 
         return applyPlaceholders(message, placeholders);
+    }
+
+    public @NotNull String text(@NotNull CommandSender receiver, @NotNull String path, @NotNull String fallback) {
+        Objects.requireNonNull(receiver, "receiver");
+        Objects.requireNonNull(path, "path");
+        Objects.requireNonNull(fallback, "fallback");
+
+        Component message = messenger.getMessage((Audience) receiver, path);
+
+        if (message == null) {
+            return fallback;
+        }
+
+        return PlainTextComponentSerializer.plainText().serialize(message);
     }
 
     public @NotNull List<LocaleOption> availableLocales() {
@@ -423,6 +444,25 @@ public final class Messages {
         messages.put(MessageKey.COMMAND_USAGE_OPEN_CONSOLE_TARGET, "<red>Usage: /hdb open <category> <player>. Console must specify a player.");
         messages.put(MessageKey.COMMAND_USAGE_RANDOM_CONSOLE, "<red>Usage: /hdb random [amount] [category] <player>. Console must specify a player.");
         messages.put(MessageKey.COMMAND_USAGE_ITEMCACHE, "<red>Usage: /hdb itemcache clear");
+        messages.put(MessageKey.COMMAND_USAGE_PLAYER, "<red>Usage: /hdb player <name|uuid> <player> [amount]");
+        messages.put(MessageKey.COMMAND_USAGE_PLAYER_ARGS, "<red>Usage: /hdb player <name|uuid> [player] [amount]");
+        messages.put(MessageKey.COMMAND_USAGE_CUSTOM, "<red>Usage: /hdb custom <list|info|create|createheld|delete|rename|give> ...");
+        messages.put(MessageKey.COMMAND_USAGE_CUSTOM_CREATE, "<red>Usage: /hdb custom create <id> <texture|url|base64> [name]");
+        messages.put(MessageKey.COMMAND_USAGE_CUSTOM_RENAME, "<red>Usage: /hdb custom rename <id> <name>");
+        messages.put(MessageKey.COMMAND_USAGE_CUSTOM_GIVE, "<red>Usage: /hdb custom give <id> [player] [amount]");
+        messages.put(MessageKey.COMMAND_USAGE_CUSTOM_GIVE_CONSOLE, "<red>Usage: /hdb custom give <id> <player> [amount]");
+        messages.put(MessageKey.COMMAND_USAGE_EDIT, "<red>Usage: /hdb edit <remote-id> <info|name|lore-set|lore-clear|tag-add|tag-remove|tags-replace|category|hide|show|reset> ...");
+        messages.put(MessageKey.COMMAND_USAGE_EDIT_NAME, "<red>Usage: /hdb edit <id> name <name>");
+        messages.put(MessageKey.COMMAND_USAGE_EDIT_LORE_SET, "<red>Usage: /hdb edit <id> lore-set <line>");
+        messages.put(MessageKey.COMMAND_USAGE_EDIT_TAG_ADD, "<red>Usage: /hdb edit <id> tag-add <tag>");
+        messages.put(MessageKey.COMMAND_USAGE_EDIT_TAG_REMOVE, "<red>Usage: /hdb edit <id> tag-remove <tag>");
+        messages.put(MessageKey.COMMAND_USAGE_EDIT_TAGS_REPLACE, "<red>Usage: /hdb edit <id> tags-replace <tag,tag,...>");
+        messages.put(MessageKey.COMMAND_USAGE_EDIT_CATEGORY, "<red>Usage: /hdb edit <id> category <category>");
+        messages.put(MessageKey.COMMAND_USAGE_GIVE_FULL, "<red>Usage: /hdb give <id> [player] [amount] or /hdb give <player> <id> [amount]");
+        messages.put(MessageKey.COMMAND_USAGE_TAGS_CREATE, "<red>Usage: /hdb tags create <id> [name]");
+        messages.put(MessageKey.COMMAND_USAGE_TAGS_DELETE, "<red>Usage: /hdb tags delete <id>");
+        messages.put(MessageKey.COMMAND_USAGE_COLLECTIONS_CREATE, "<red>Usage: /hdb collections create <id> [name]");
+        messages.put(MessageKey.COMMAND_USAGE_COLLECTIONS_DELETE, "<red>Usage: /hdb collections delete <id>");
 
         messages.put(MessageKey.COMMAND_ERROR_INVALID_ARGUMENT, "<red>{message}");
         messages.put(MessageKey.COMMAND_ERROR_UNKNOWN_HEAD, "<red>Unknown HeadDB head: <gold>{id}");
@@ -430,10 +470,51 @@ public final class Messages {
         messages.put(MessageKey.COMMAND_ERROR_TARGET_EMPTY, "<red>Target player cannot be empty.");
         messages.put(MessageKey.COMMAND_ERROR_NO_GIVE_OTHERS, "<red>You do not have permission to give heads to other players.");
         messages.put(MessageKey.COMMAND_ERROR_INVENTORY_FULL, "<red>Could not give head because <gold>{player}</gold><red>'s inventory is full.");
-        messages.put(MessageKey.COMMAND_ERROR_SEARCH_GUI_NOT_READY, "<red>Search GUI is not implemented yet.");
         messages.put(MessageKey.COMMAND_ERROR_UNKNOWN_CATEGORY, "<red>Unknown category: <gold>{category}");
         messages.put(MessageKey.COMMAND_ERROR_HELD_HEAD_REQUIRED, "<red>Hold a HeadDB head or provide an ID.");
         messages.put(MessageKey.COMMAND_ERROR_RANDOM_EMPTY, "<red>No heads matched the random command filters.");
+        messages.put(MessageKey.COMMAND_ERROR_PAGE_MIN, "<red>Page must be at least 1.");
+        messages.put(MessageKey.COMMAND_ERROR_PAGE_MAX, "<red>Page cannot be greater than {max}.");
+        messages.put(MessageKey.COMMAND_ERROR_LIMIT_MIN, "<red>Limit must be at least 1.");
+        messages.put(MessageKey.COMMAND_ERROR_LIMIT_MAX, "<red>Limit cannot be greater than {max}.");
+        messages.put(MessageKey.COMMAND_ERROR_AMOUNT_NUMBER, "<red>Amount must be a number.");
+        messages.put(MessageKey.COMMAND_ERROR_AMOUNT_RANGE, "<red>Amount must be between 1 and {max}.");
+        messages.put(MessageKey.COMMAND_ERROR_RANDOM_AMOUNT_RANGE, "<red>Random amount must be between 1 and {max}.");
+        messages.put(MessageKey.COMMAND_ERROR_RANDOM_ARGUMENT, "<red>Could not parse random command argument: <gold>{value}");
+        messages.put(MessageKey.COMMAND_ERROR_CONSOLE_CREATEHELD, "<red>Console cannot use createheld.");
+        messages.put(MessageKey.COMMAND_ERROR_AMBIGUOUS_GIVE, "<red>Ambiguous give command. Use /hdb give <id> <player> [amount] with a non-ID player name.");
+        messages.put(MessageKey.COMMAND_ERROR_AMBIGUOUS_GIVE_AMOUNT, "<red>Ambiguous give command. Use /hdb give <id> <player> <amount> with a non-ID player name.");
+        messages.put(MessageKey.COMMAND_ERROR_SEARCH_EMPTY, "<red>Search {name} cannot be empty.");
+        messages.put(MessageKey.COMMAND_ERROR_SEARCH_SINGLE_ID, "<red>Search {name} must contain exactly one ID.");
+        messages.put(MessageKey.COMMAND_ERROR_SEARCH_EMPTY_ID, "<red>Search {name} contains an empty ID.");
+        messages.put(MessageKey.COMMAND_ERROR_SEARCH_IDS_EMPTY_ID, "<red>Search ids contains an empty ID.");
+        messages.put(MessageKey.COMMAND_ERROR_HEAD_ID_EMPTY, "<red>Head ID cannot be empty.");
+        messages.put(MessageKey.COMMAND_ERROR_HEAD_ID_PREFIX, "<red>Unknown head ID prefix in '<gold>{raw}</gold><red>'. Use remote:<id>, custom:<id>, player:<name|uuid>, or a bare remote ID.");
+        messages.put(MessageKey.COMMAND_ERROR_REMOTE_ID_EMPTY, "<red>Remote head ID cannot be empty.");
+        messages.put(MessageKey.COMMAND_ERROR_REMOTE_ID_NUMERIC, "<red>Invalid remote head ID '<gold>{raw}</gold><red>'. Remote IDs must be numeric.");
+        messages.put(MessageKey.COMMAND_ERROR_REMOTE_ID_LARGE, "<red>Invalid remote head ID '<gold>{raw}</gold><red>'. Remote ID is too large.");
+        messages.put(MessageKey.COMMAND_ERROR_CUSTOM_ID_EMPTY, "<red>Custom head ID cannot be empty.");
+        messages.put(MessageKey.COMMAND_ERROR_CUSTOM_ID_REQUIRED, "<red>Custom head ID is required.");
+        messages.put(MessageKey.COMMAND_ERROR_UNKNOWN_CUSTOM_HEAD, "<red>Unknown custom head: <gold>{id}");
+        messages.put(MessageKey.COMMAND_ERROR_PLAYER_ID_EMPTY, "<red>Player head name or UUID cannot be empty.");
+        messages.put(MessageKey.COMMAND_ERROR_PLAYER_LOOKUP_BLANK, "<red>Player lookup cannot be blank.");
+        messages.put(MessageKey.COMMAND_ERROR_UNKNOWN_LOCAL_PLAYER, "<red>Unknown local player: <gold>{player}");
+        messages.put(MessageKey.COMMAND_ERROR_ID_BLANK, "<red>ID cannot be blank.");
+        messages.put(MessageKey.COMMAND_ERROR_ID_REQUIRED, "<red>ID is required.");
+        messages.put(MessageKey.COMMAND_ERROR_ID_INVALID_CHARACTER, "<red>ID contains an invalid character: <gold>{character}");
+        messages.put(MessageKey.COMMAND_ERROR_NAME_BLANK, "<red>Name cannot be blank.");
+        messages.put(MessageKey.COMMAND_ERROR_CUSTOM_NAME_EMPTY, "<red>Custom head name cannot be empty.");
+        messages.put(MessageKey.COMMAND_ERROR_CATEGORY_ID_BLANK, "<red>Custom category ID cannot be blank.");
+        messages.put(MessageKey.COMMAND_ERROR_CATEGORY_NAME_BLANK, "<red>Custom category name cannot be blank.");
+        messages.put(MessageKey.COMMAND_ERROR_TEXTURE_EMPTY, "<red>Texture input cannot be empty.");
+        messages.put(MessageKey.COMMAND_ERROR_TEXTURE_REQUIRED, "<red>Texture is required.");
+        messages.put(MessageKey.COMMAND_ERROR_TEXTURE_NOT_HEAD, "<red>Held item is not a player head.");
+        messages.put(MessageKey.COMMAND_ERROR_TEXTURE_NO_PROFILE, "<red>Held player head does not contain a profile.");
+        messages.put(MessageKey.COMMAND_ERROR_TEXTURE_NO_PROPERTY, "<red>Held player head does not contain a texture property.");
+        messages.put(MessageKey.COMMAND_ERROR_TEXTURE_NO_URL, "<red>Texture input does not contain a textures.minecraft.net URL.");
+        messages.put(MessageKey.COMMAND_ERROR_TEXTURE_NO_HASH, "<red>Texture URL does not contain a texture hash.");
+        messages.put(MessageKey.COMMAND_ERROR_TEXTURE_HASH_EMPTY, "<red>Texture hash cannot be empty.");
+        messages.put(MessageKey.COMMAND_ERROR_TEXTURE_HASH_HEX, "<red>Texture hash must be hexadecimal.");
 
         messages.put(MessageKey.COMMAND_GIVE_SUCCESS, "<gray>Gave <gold>{head}</gold> to <gold>{player}</gold>.");
         messages.put(MessageKey.COMMAND_GIVE_RECEIVED, "<gray>You received <gold>{head}</gold> from HeadDB.");
@@ -455,6 +536,35 @@ public final class Messages {
 
         messages.put(MessageKey.COMMAND_ITEMCACHE_CLEARED, "<gold>Cleared HeadDB item cache. Removed <gray>{count}</gray><gold> cached item(s).");
 
+        messages.put(MessageKey.COMMAND_UPDATE_CHECKING, "<gray>Checking for updates...");
+
+        messages.put(MessageKey.COMMAND_CUSTOM_LIST_HEADER, "<gold>Custom Heads <gray>{page}/{pages}");
+        messages.put(MessageKey.COMMAND_CUSTOM_LIST_EMPTY, "<gray>No custom heads are stored.");
+        messages.put(MessageKey.COMMAND_CUSTOM_INFO_HEADER, "<gray>Custom Head: <gold>{name}");
+        messages.put(MessageKey.COMMAND_CUSTOM_INFO_ID, "<gray>ID: <gold>{value}");
+        messages.put(MessageKey.COMMAND_CUSTOM_INFO_CATEGORY, "<gray>Category: <gold>{value}");
+        messages.put(MessageKey.COMMAND_CUSTOM_INFO_TAGS, "<gray>Tags: <gold>{value}");
+        messages.put(MessageKey.COMMAND_CUSTOM_INFO_COLLECTIONS, "<gray>Collections: <gold>{value}");
+        messages.put(MessageKey.COMMAND_CUSTOM_INFO_TEXTURE, "<gray>Texture: <gold>{value}");
+        messages.put(MessageKey.COMMAND_CUSTOM_CREATED, "<gray>Created custom head <gold>{id}</gold><gray>.");
+        messages.put(MessageKey.COMMAND_CUSTOM_CREATED_HELD, "<gray>Created custom head from held item: <gold>{id}");
+        messages.put(MessageKey.COMMAND_CUSTOM_DELETED, "<gray>Deleted <gold>{id}");
+        messages.put(MessageKey.COMMAND_CUSTOM_DELETE_MISSING, "<red>No custom head existed for <gold>{id}");
+        messages.put(MessageKey.COMMAND_CUSTOM_RENAMED, "<gray>Renamed <gold>{id}</gold><gray> to <gold>{name}");
+
+        messages.put(MessageKey.COMMAND_EDIT_REMOTE_ONLY, "<red>Only remote heads can be edited with /hdb edit. Use /hdb custom for custom heads.");
+        messages.put(MessageKey.COMMAND_EDIT_OVERRIDE_PRESENT, "<gold>Local override: present");
+        messages.put(MessageKey.COMMAND_EDIT_OVERRIDE_NONE, "<gray>Local override: none");
+        messages.put(MessageKey.COMMAND_EDIT_SAVED, "<gray>Saved local override for <gold>{id}");
+        messages.put(MessageKey.COMMAND_EDIT_RESET, "<gray>Reset local override for <gold>{id}");
+        messages.put(MessageKey.COMMAND_EDIT_RESET_MISSING, "<red>No local override existed for <gold>{id}");
+
+        messages.put(MessageKey.COMMAND_PLAYER_RESOLVING, "<gray>Resolving player head for <gold>{player}</gold><gray>...");
+        messages.put(MessageKey.COMMAND_PLAYER_RESOLVE_FAILED, "<red>Could not resolve player head: <gray>{message}");
+
+        messages.put(MessageKey.COMMAND_REPORT_HEADER, "<dark_gray>> <red>Report");
+        messages.put(MessageKey.COMMAND_REPORT_PASTE_HINT, "<gray>Paste this report when asking for support.");
+
         // GUI
 
         messages.put(MessageKey.GUI_LANGUAGE_CHANGED, "<gray>Language changed to <gold>{locale}</gold>.");
@@ -464,6 +574,96 @@ public final class Messages {
         messages.put(MessageKey.GUI_TAXONOMY_CREATED, "<gray>Created custom {type}: <gold>{name}</gold><gray> (<gold>{id}</gold><gray>).");
         messages.put(MessageKey.GUI_TAXONOMY_DELETED, "<gray>Deleted custom {type}: <gold>{id}</gold><gray>.");
         messages.put(MessageKey.GUI_TAXONOMY_UNKNOWN, "<red>Unknown custom {type}: <gold>{id}</gold>");
+        messages.put(MessageKey.GUI_TAXONOMY_ID_PROMPT, "<gold>Enter the {type} id.");
+        messages.put(MessageKey.GUI_TAXONOMY_NAME_PROMPT, "<gold>Enter the {type} display name.");
+        messages.put(MessageKey.GUI_TAXONOMY_DESCRIPTION_PROMPT, "<gold>Enter the {type} description.");
+
+        messages.put(MessageKey.GUI_PROMPT_HINT, "<gray> Type cancel to abort.");
+        messages.put(MessageKey.GUI_PROMPT_CANCELLED, "<gray>Prompt cancelled.");
+
+        messages.put(MessageKey.GUI_SEARCH_PROMPT, "<gold>Enter a search query.");
+        messages.put(MessageKey.GUI_SEARCH_IDS_PROMPT, "<gold>Enter comma-separated head IDs.");
+        messages.put(MessageKey.GUI_SEARCH_CANCELLED, "<gray>Search cancelled.");
+        messages.put(MessageKey.GUI_SEARCH_INFO_HEADER, "<gold><bold>Search Info");
+        messages.put(MessageKey.GUI_SEARCH_INFO_QUERY, "<gray>Query: <white>{query}");
+        messages.put(MessageKey.GUI_SEARCH_INFO_SORT, "<gray>Sort: <aqua>relevance descending");
+
+        messages.put(MessageKey.GUI_TAGS_SEARCH_PROMPT, "<gold>Enter tag search text.");
+        messages.put(MessageKey.GUI_COLLECTIONS_SEARCH_PROMPT, "<gold>Enter collection search text.");
+
+        messages.put(MessageKey.GUI_FAVORITE_MISSING, "<red>Favorite head no longer exists.");
+        messages.put(MessageKey.GUI_FAVORITE_ADDED, "<yellow>Added favorite: <gold>{head}");
+        messages.put(MessageKey.GUI_FAVORITE_REMOVED, "<gray>Removed favorite: <gold>{head}");
+        messages.put(MessageKey.GUI_ADMIN_MODE_ENABLED, "<green>Admin Mode enabled.");
+        messages.put(MessageKey.GUI_USER_MODE_ENABLED, "<gray>User Mode enabled.");
+        messages.put(MessageKey.GUI_ADMIN_MODE_REQUIRED, "<red>Enable Admin Mode to edit heads.");
+
+        messages.put(MessageKey.GUI_INVENTORY_FULL, "<red>Your inventory is full.");
+        messages.put(MessageKey.GUI_HEAD_MISSING, "<red>Head no longer exists.");
+        messages.put(MessageKey.GUI_HEAD_SHOWN, "<gray>Head shown: <gold>{head}");
+        messages.put(MessageKey.GUI_HEAD_VISIBLE, "<green>Head is now visible.");
+        messages.put(MessageKey.GUI_HEAD_HIDDEN, "<gray>Head is now hidden.");
+        messages.put(MessageKey.GUI_HIDDEN_ALL_SHOWN, "<green>All hidden heads were shown.");
+        messages.put(MessageKey.GUI_HEAD_PRICE_PROMPT, "<gold>Enter the new head price, or 0 to clear.");
+        messages.put(MessageKey.GUI_HEAD_PRICE_FAILED, "<red>Failed to update head price: <gray>{message}");
+        messages.put(MessageKey.GUI_HEAD_DRAFT_SAVED, "<gray>Saved draft head: <gold>{head}");
+        messages.put(MessageKey.GUI_HEAD_DRAFT_PUBLISHED, "<gray>Draft published: <gold>{head}");
+        messages.put(MessageKey.GUI_HEAD_ID_PROMPT, "<gold>Enter the custom head id.");
+        messages.put(MessageKey.GUI_HEAD_NAME_PROMPT, "<gold>Enter the custom head name.");
+        messages.put(MessageKey.GUI_HEAD_TEXTURE_PROMPT, "<gold>Enter a texture hash, URL, or base64 value.");
+        messages.put(MessageKey.GUI_CUSTOM_HEAD_MISSING, "<red>Custom head no longer exists.");
+        messages.put(MessageKey.GUI_CUSTOM_HEAD_MISSING_ID, "<red>Custom head no longer exists: <gold>{id}");
+        messages.put(MessageKey.GUI_CUSTOM_HEAD_DELETED, "<gray>Custom head deleted: <gold>{head}");
+
+        messages.put(MessageKey.GUI_EDIT_UNKNOWN_ACTION, "<red>Unknown edit action.");
+        messages.put(MessageKey.GUI_EDIT_NAME_PROMPT, "<gold>Enter the new name.");
+        messages.put(MessageKey.GUI_EDIT_NAME_UPDATED, "<gold><bold>Name Updated");
+        messages.put(MessageKey.GUI_EDIT_NAME_CHANGE, "<gray>{old}<dark_gray> > <green>{new}");
+        messages.put(MessageKey.GUI_EDIT_CATEGORY_SET, "<gray>Category set to <gold>{category}");
+        messages.put(MessageKey.GUI_EDIT_OVERRIDE_RESET, "<gray>Local override reset.");
+        messages.put(MessageKey.GUI_EDIT_LORE_ADD_PROMPT, "<gold>Enter the lore line to add.");
+        messages.put(MessageKey.GUI_EDIT_LORE_EDIT_PROMPT, "<gold>Enter replacement text for lore line {line}.");
+        messages.put(MessageKey.GUI_EDIT_LORE_ADDED, "<gray>Lore line added.");
+        messages.put(MessageKey.GUI_EDIT_LORE_CLEARED, "<gray>Lore cleared.");
+        messages.put(MessageKey.GUI_EDIT_LORE_UPDATED, "<gray>Lore line updated.");
+        messages.put(MessageKey.GUI_EDIT_LORE_LINE_REMOVED, "<gray>Lore line removed.");
+        messages.put(MessageKey.GUI_EDIT_LORE_RESET, "<gray>Lore reset to default.");
+
+        messages.put(MessageKey.GUI_CATEGORY_HEAD_PROMPT, "<gold>Enter a head id to add.");
+        messages.put(MessageKey.GUI_CATEGORY_HEAD_ADDED, "<gray>Head added: <gold>{head}");
+        messages.put(MessageKey.GUI_CATEGORY_HEAD_REMOVED, "<gray>Head removed: <gold>{head}");
+        messages.put(MessageKey.GUI_CATEGORY_NAME_PROMPT, "<gold>Enter the custom category display name.");
+        messages.put(MessageKey.GUI_CATEGORY_DISPLAY_NAME_PROMPT, "<gold>Enter the category display name.");
+        messages.put(MessageKey.GUI_CATEGORY_DESCRIPTION_PROMPT, "<gold>Enter the category description.");
+        messages.put(MessageKey.GUI_CATEGORY_MATERIAL_PROMPT, "<gold>Enter a Bukkit material name for the icon.");
+        messages.put(MessageKey.GUI_CATEGORY_HEAD_ICON_PROMPT, "<gold>Enter a head id for the icon, or none to clear.");
+        messages.put(MessageKey.GUI_CATEGORY_PERMISSION, "<gray>Permission: <gold>{permission}");
+        messages.put(MessageKey.GUI_CATEGORY_ICON_PROMPT, "<gold>Enter a head id for the category icon, or none to clear.");
+        messages.put(MessageKey.GUI_CATEGORY_PRICE_PROMPT, "<gold>Enter the new category price, or 0 to clear.");
+        messages.put(MessageKey.GUI_CATEGORY_PRICE_FAILED, "<red>Failed to update category price: <gray>{message}");
+        messages.put(MessageKey.GUI_CATEGORY_DRAFT_SAVED, "<gray>Category draft saved: <gold>{name}");
+        messages.put(MessageKey.GUI_CATEGORY_PUBLISHED, "<gray>Category published: <gold>{name}");
+        messages.put(MessageKey.GUI_CATEGORY_SAVED, "<gray>Custom category saved: <gold>{name}");
+        messages.put(MessageKey.GUI_CATEGORY_DELETED, "<gray>Custom category deleted: <gold>{id}");
+        messages.put(MessageKey.GUI_CATEGORY_SAVE_FIRST, "<red>Save this custom category before managing heads.");
+        messages.put(MessageKey.GUI_CATEGORY_NAME_REQUIRED, "<red>Set a name before saving.");
+
+        messages.put(MessageKey.GUI_MATERIAL_PROMPT, "<gold>Type a modern item material name.");
+        messages.put(MessageKey.GUI_MATERIAL_UNKNOWN, "<red>Unknown modern item material: <gold>{material}");
+        messages.put(MessageKey.GUI_MATERIAL_SET, "<gray>Button material set to <gold>{material}");
+
+        messages.put(MessageKey.GUI_BUTTON_NAME_PROMPT, "<gold>Enter MiniMessage name.");
+        messages.put(MessageKey.GUI_BUTTON_HEAD_ID_PROMPT, "<gold>Enter head id. Use none to clear.");
+        messages.put(MessageKey.GUI_BUTTON_LORE_ADD_PROMPT, "<gold>Enter the lore line to add.");
+        messages.put(MessageKey.GUI_BUTTON_LORE_EDIT_PROMPT, "<gold>Enter replacement text for lore line {line}.");
+        messages.put(MessageKey.GUI_BUTTON_TYPE_SET, "<gray>Button type set to <gold>{type}");
+        messages.put(MessageKey.GUI_BUTTON_RESET, "<gray>GUI button reset: <gold>{button}");
+        messages.put(MessageKey.GUI_BUTTON_UPDATED, "<gray>GUI button updated: <gold>{button}");
+        messages.put(MessageKey.GUI_BUTTON_EDIT_CANCELLED, "<gray>GUI edit cancelled.");
+        messages.put(MessageKey.GUI_BUTTON_LORE_CLEARED, "<gray>Button lore cleared.");
+        messages.put(MessageKey.GUI_BUTTON_LORE_RESET, "<gray>Button lore reset.");
+        messages.put(MessageKey.GUI_BUTTON_LORE_LINE_REMOVED, "<gray>Button lore line removed.");
+        messages.put(MessageKey.GUI_BUTTON_LORE_UPDATED, "<gray>Button lore updated: <gold>{button}");
 
         return Map.copyOf(messages);
     }

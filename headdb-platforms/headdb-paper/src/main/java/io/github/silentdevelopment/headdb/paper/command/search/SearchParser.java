@@ -1,9 +1,12 @@
 package io.github.silentdevelopment.headdb.paper.command.search;
 
 import io.github.silentdevelopment.headdb.model.HeadId;
+import io.github.silentdevelopment.headdb.paper.message.MessageException;
+import io.github.silentdevelopment.headdb.paper.message.MessageKey;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -20,11 +23,11 @@ public final class SearchParser {
         String value = raw.trim();
 
         if (value.isEmpty()) {
-            throw new IllegalArgumentException("Search " + name + " cannot be empty.");
+            throw new MessageException(MessageKey.COMMAND_ERROR_SEARCH_EMPTY, Map.of("name", name));
         }
 
         if (value.contains(",")) {
-            throw new IllegalArgumentException("Search " + name + " must contain exactly one ID.");
+            throw new MessageException(MessageKey.COMMAND_ERROR_SEARCH_SINGLE_ID, Map.of("name", name));
         }
 
         return value;
@@ -37,7 +40,7 @@ public final class SearchParser {
             String value = token.trim();
 
             if (value.isEmpty()) {
-                throw new IllegalArgumentException("Search " + name + " contains an empty ID.");
+                throw new MessageException(MessageKey.COMMAND_ERROR_SEARCH_EMPTY_ID, Map.of("name", name));
             }
 
             values.add(value);
@@ -53,7 +56,7 @@ public final class SearchParser {
             String value = token.trim();
 
             if (value.isEmpty()) {
-                throw new IllegalArgumentException("Search ids contains an empty ID.");
+                throw new MessageException(MessageKey.COMMAND_ERROR_SEARCH_IDS_EMPTY_ID);
             }
 
             ids.add(headId(value));
@@ -66,7 +69,7 @@ public final class SearchParser {
         String value = raw.trim();
 
         if (value.isEmpty()) {
-            throw new IllegalArgumentException("Head ID cannot be empty.");
+            throw new MessageException(MessageKey.COMMAND_ERROR_HEAD_ID_EMPTY);
         }
 
         if (startsWithPrefix(value, REMOTE_PREFIX)) {
@@ -82,7 +85,7 @@ public final class SearchParser {
         }
 
         if (looksPrefixed(value)) {
-            throw new IllegalArgumentException("Unknown head ID prefix in '" + raw + "'. Use remote:<id>, custom:<id>, player:<name|uuid>, or a bare remote ID.");
+            throw new MessageException(MessageKey.COMMAND_ERROR_HEAD_ID_PREFIX, Map.of("raw", raw));
         }
 
         return remoteHeadId(value);
@@ -92,17 +95,17 @@ public final class SearchParser {
         String value = raw.trim();
 
         if (value.isEmpty()) {
-            throw new IllegalArgumentException("Remote head ID cannot be empty.");
+            throw new MessageException(MessageKey.COMMAND_ERROR_REMOTE_ID_EMPTY);
         }
 
         if (!isUnsignedInteger(value)) {
-            throw new IllegalArgumentException("Invalid remote head ID '" + raw + "'. Remote IDs must be numeric.");
+            throw new MessageException(MessageKey.COMMAND_ERROR_REMOTE_ID_NUMERIC, Map.of("raw", raw));
         }
 
         try {
             return HeadId.remote(Integer.parseInt(value));
         } catch (NumberFormatException exception) {
-            throw new IllegalArgumentException("Invalid remote head ID '" + raw + "'. Remote ID is too large.", exception);
+            throw new MessageException(MessageKey.COMMAND_ERROR_REMOTE_ID_LARGE, Map.of("raw", raw), exception);
         }
     }
 
@@ -110,7 +113,7 @@ public final class SearchParser {
         String value = raw.trim();
 
         if (value.isEmpty()) {
-            throw new IllegalArgumentException("Custom head ID cannot be empty.");
+            throw new MessageException(MessageKey.COMMAND_ERROR_CUSTOM_ID_EMPTY);
         }
 
         return HeadId.custom(value);
@@ -120,7 +123,7 @@ public final class SearchParser {
         String value = raw.trim();
 
         if (value.isEmpty()) {
-            throw new IllegalArgumentException("Player head name or UUID cannot be empty.");
+            throw new MessageException(MessageKey.COMMAND_ERROR_PLAYER_ID_EMPTY);
         }
 
         try {

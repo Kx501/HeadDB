@@ -23,7 +23,7 @@ public final class VersionCommand extends AbstractPaperCommand {
 
     @Override
     protected void handle(@NotNull PaperCommandContext context) {
-        for (Component line : VersionFormatter.command(plugin)) {
+        for (Component line : VersionFormatter.command(plugin, context.sender())) {
             plugin.messages().send(context.sender(), line);
         }
     }

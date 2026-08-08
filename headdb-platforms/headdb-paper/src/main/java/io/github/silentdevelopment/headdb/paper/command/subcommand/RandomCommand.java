@@ -5,6 +5,7 @@ import io.github.silentdevelopment.headdb.paper.HeadDBPlugin;
 import io.github.silentdevelopment.headdb.paper.command.CommandRequirements;
 import io.github.silentdevelopment.headdb.paper.command.Suggestions;
 import io.github.silentdevelopment.headdb.paper.item.HeadItemFactory;
+import io.github.silentdevelopment.headdb.paper.message.MessageException;
 import io.github.silentdevelopment.headdb.paper.message.MessageKey;
 import io.github.silentdevelopment.headdb.paper.permission.Permissions;
 import io.github.silentdevelopment.headdb.paper.sound.SoundKey;
@@ -24,6 +25,7 @@ import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ThreadLocalRandom;
@@ -50,7 +52,7 @@ public final class RandomCommand extends AbstractPaperCommand {
         try {
             request = request(context);
         } catch (IllegalArgumentException exception) {
-            plugin.messages().send(context.sender(), plugin.messages().invalidArgument(context.sender(), exception.getMessage()));
+            plugin.messages().send(context.sender(), plugin.messages().invalidArgument(context.sender(), exception));
             play(context, SoundKey.INVALID);
             return;
         }
@@ -194,7 +196,7 @@ public final class RandomCommand extends AbstractPaperCommand {
             return;
         }
 
-        throw new IllegalArgumentException("Could not parse random command argument: " + value);
+        throw new MessageException(MessageKey.COMMAND_ERROR_RANDOM_ARGUMENT, Map.of("value", value));
     }
 
     private void play(@NotNull PaperCommandContext context, @NotNull SoundKey key) {
@@ -217,7 +219,7 @@ public final class RandomCommand extends AbstractPaperCommand {
     private static int parseAmount(@NotNull String value) {
         int amount = Integer.parseInt(value);
         if (amount < 1 || amount > MAX_AMOUNT) {
-            throw new IllegalArgumentException("Random amount must be between 1 and " + MAX_AMOUNT + ".");
+            throw new MessageException(MessageKey.COMMAND_ERROR_RANDOM_AMOUNT_RANGE, Map.of("max", String.valueOf(MAX_AMOUNT)));
         }
 
         return amount;

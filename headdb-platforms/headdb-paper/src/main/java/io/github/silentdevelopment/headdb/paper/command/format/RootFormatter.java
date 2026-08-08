@@ -1,6 +1,7 @@
 package io.github.silentdevelopment.headdb.paper.command.format;
 
 import io.github.silentdevelopment.headdb.paper.HeadDBPlugin;
+import io.github.silentdevelopment.headdb.paper.message.Messages;
 import io.github.silentdevelopment.headdb.paper.permission.Permissions;
 import io.github.silentdevelopment.headdb.paper.runtime.BuildInfo;
 import io.papermc.paper.plugin.configuration.PluginMeta;
@@ -30,28 +31,29 @@ public final class RootFormatter {
 
         PluginMeta description = plugin.getPluginMeta();
         BuildInfo buildInfo = BuildInfo.read(plugin);
+        Messages messages = plugin.messages();
 
         List<Component> lines = new ArrayList<>();
 
         lines.add(Component.empty());
-        lines.add(runningLine(description, buildInfo));
+        lines.add(runningLine(messages, sender, description, buildInfo));
         lines.add(Component.empty());
-        lines.add(helpLine());
+        lines.add(helpLine(messages, sender));
 
         if (sender.hasPermission(Permissions.ADMIN)) {
             lines.add(Component.empty());
-            lines.add(section("Build"));
-            lines.add(field("Version", buildInfo.version()));
-            lines.add(field("Build", buildInfo.displayBuild()));
-            lines.add(field("Channel", buildInfo.channel()));
-            lines.add(field("Run ID", valueOrUnavailable(buildInfo.runId())));
-            lines.add(field("Commit", valueOrUnavailable(buildInfo.commit())));
-            lines.add(field("Full commit", valueOrUnavailable(buildInfo.fullCommit())));
-            lines.add(field("Branch", valueOrUnavailable(buildInfo.branch())));
-            lines.add(field("Timestamp", valueOrUnavailable(buildInfo.buildTime())));
+            lines.add(section(text(messages, sender, "section.build", "Build")));
+            lines.add(field(text(messages, sender, "field.version", "Version"), buildInfo.version()));
+            lines.add(field(text(messages, sender, "field.build", "Build"), buildInfo.displayBuild()));
+            lines.add(field(text(messages, sender, "field.channel", "Channel"), buildInfo.channel()));
+            lines.add(field(text(messages, sender, "field.run-id", "Run ID"), valueOrUnavailable(messages, sender, buildInfo.runId())));
+            lines.add(field(text(messages, sender, "field.commit", "Commit"), valueOrUnavailable(messages, sender, buildInfo.commit())));
+            lines.add(field(text(messages, sender, "field.full-commit", "Full commit"), valueOrUnavailable(messages, sender, buildInfo.fullCommit())));
+            lines.add(field(text(messages, sender, "field.branch", "Branch"), valueOrUnavailable(messages, sender, buildInfo.branch())));
+            lines.add(field(text(messages, sender, "field.timestamp", "Timestamp"), valueOrUnavailable(messages, sender, buildInfo.buildTime())));
         }
 
-        Component buttons = actionButtons(sender);
+        Component buttons = actionButtons(messages, sender);
         if (!buttons.equals(Component.empty())) {
             lines.add(Component.empty());
             lines.add(buttons);
@@ -63,28 +65,32 @@ public final class RootFormatter {
     }
 
     private static @NotNull Component runningLine(
+            @NotNull Messages messages,
+            @NotNull CommandSender sender,
             @NotNull PluginMeta meta,
             @NotNull BuildInfo buildInfo
     ) {
-        return Component.text("Running ", NamedTextColor.GRAY)
+        String openHover = text(messages, sender, "open-github", "Open on GitHub");
+
+        return Component.text(text(messages, sender, "running", "Running") + " ", NamedTextColor.GRAY)
                 .append(link(
                         meta.getName() + " " + buildInfo.version(),
                         HEADDB_URL,
-                        "Open on GitHub",
+                        openHover,
                         NamedTextColor.GOLD
                 ))
-                .append(Component.text(" by ", NamedTextColor.GRAY))
+                .append(Component.text(" " + text(messages, sender, "by", "by") + " ", NamedTextColor.GRAY))
                 .append(link(
                         "SilentDevelopment",
                         SILENT_DEVELOPMENT_URL,
-                        "Open on GitHub",
+                        openHover,
                         NamedTextColor.GOLD
                 ))
                 .append(Component.text(" / ", NamedTextColor.DARK_GRAY))
                 .append(link(
                         "TheSilentPro",
                         THE_SILENT_PRO_URL,
-                        "Open on GitHub",
+                        openHover,
                         NamedTextColor.GOLD
                 ));
     }
@@ -100,36 +106,56 @@ public final class RootFormatter {
                 .append(Component.text(value, NamedTextColor.GOLD));
     }
 
-    private static @NotNull Component helpLine() {
+    private static @NotNull Component helpLine(@NotNull Messages messages, @NotNull CommandSender sender) {
         return Component.text(" > ", NamedTextColor.DARK_GRAY)
-                .append(Component.text("Run ", NamedTextColor.GRAY))
+                .append(Component.text(text(messages, sender, "help-prefix", "Run") + " ", NamedTextColor.GRAY))
                 .append(Component.text("/hdb help", NamedTextColor.GOLD)
                         .clickEvent(ClickEvent.suggestCommand("/hdb help"))
-                        .hoverEvent(HoverEvent.showText(Component.text("Click to suggest /hdb help", NamedTextColor.GRAY))))
-                .append(Component.text(" for command information.", NamedTextColor.GRAY));
+                        .hoverEvent(HoverEvent.showText(Component.text(text(messages, sender, "help-hover", "Click to suggest {command}").replace("{command}", "/hdb help"), NamedTextColor.GRAY))))
+                .append(Component.text(" " + text(messages, sender, "help-suffix", "for command information."), NamedTextColor.GRAY));
     }
 
-    private static @NotNull Component actionButtons(@NotNull CommandSender sender) {
+    private static @NotNull Component actionButtons(@NotNull Messages messages, @NotNull CommandSender sender) {
         List<Component> buttons = new ArrayList<>();
 
         if (Permissions.has(sender, Permissions.RELOAD)) {
-            buttons.add(button("RELOAD", "/hdb reload", "Reload config, messages, and runtime."));
+            buttons.add(button(
+                    text(messages, sender, "button.reload", "RELOAD"),
+                    "/hdb reload",
+                    text(messages, sender, "button.reload-hover", "Reload config, messages, and runtime.")
+            ));
         }
 
         if (Permissions.has(sender, Permissions.VERIFY)) {
-            buttons.add(button("VERIFY", "/hdb verify", "Verify the remote database without replacing the active database."));
+            buttons.add(button(
+                    text(messages, sender, "button.verify", "VERIFY"),
+                    "/hdb verify",
+                    text(messages, sender, "button.verify-hover", "Verify the remote database without replacing the active database.")
+            ));
         }
 
         if (Permissions.has(sender, Permissions.REFRESH)) {
-            buttons.add(button("REFRESH", "/hdb refresh", "Fetch the latest remote head database."));
+            buttons.add(button(
+                    text(messages, sender, "button.refresh", "REFRESH"),
+                    "/hdb refresh",
+                    text(messages, sender, "button.refresh-hover", "Fetch the latest remote head database.")
+            ));
         }
 
         if (Permissions.has(sender, Permissions.STATUS)) {
-            buttons.add(button("STATUS", "/hdb status", "Show database and refresh status."));
+            buttons.add(button(
+                    text(messages, sender, "button.status", "STATUS"),
+                    "/hdb status",
+                    text(messages, sender, "button.status-hover", "Show database and refresh status.")
+            ));
         }
 
         if (Permissions.has(sender, Permissions.DEBUG)) {
-            buttons.add(button("DEBUG", "/hdb debug", "Show detailed runtime diagnostics."));
+            buttons.add(button(
+                    text(messages, sender, "button.debug", "DEBUG"),
+                    "/hdb debug",
+                    text(messages, sender, "button.debug-hover", "Show detailed runtime diagnostics.")
+            ));
         }
 
         if (buttons.isEmpty()) {
@@ -173,9 +199,13 @@ public final class RootFormatter {
                 .hoverEvent(HoverEvent.showText(Component.text(hover, NamedTextColor.GRAY)));
     }
 
-    private static @NotNull String valueOrUnavailable(String value) {
+    private static @NotNull String text(@NotNull Messages messages, @NotNull CommandSender sender, @NotNull String key, @NotNull String fallback) {
+        return messages.text(sender, "command.root." + key, fallback);
+    }
+
+    private static @NotNull String valueOrUnavailable(@NotNull Messages messages, @NotNull CommandSender sender, String value) {
         if (value == null || value.isBlank()) {
-            return "unavailable";
+            return text(messages, sender, "value.unavailable", "unavailable");
         }
 
         return value;

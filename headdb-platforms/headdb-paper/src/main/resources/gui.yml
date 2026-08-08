@@ -752,6 +752,100 @@ texts:
   title.tags-custom-page: Custom Tags %page%/%pages%
   title.confirm-refresh: Confirm Refresh
   title.confirm-reload: Confirm Reload
+  title.all-heads: All Heads
+  title.filtered-heads: Filtered Heads
+  title.advanced-search: Advanced Search
+  title.languages: HeadDB Languages
+  title.favorites-page: Favorites %page%/%pages%
+  name.info: Info
+  name.player-heads: Player Heads
+  name.custom-heads: Custom Heads
+  name.sort-filter: Sort / Filter
+  name.search-summary: Search Summary
+  name.browse-summary: Browse Summary
+  name.category-summary: Category Summary
+  name.no-heads-found: No Heads Found
+  name.no-permission: No Permission
+  name.current-search: Current Search
+  name.run-search: Run Search
+  name.text-query: Text Query
+  name.head-id-filters: Head ID Filters
+  name.category-filters: Category Filters
+  name.tag-filters: Tag Filters
+  name.collection-filters: Collection Filters
+  name.category-scope: Category Scope
+  name.languages: Languages
+  name.reset-language: Reset Language
+  name.clear-filters: Clear Filters
+  name.clear-filter: Clear %type%
+  name.sort-cycle: 'Sort: %sort%'
+  name.sort-direction: 'Direction: %direction%'
+  label.heads: Heads
+  label.categories: Categories
+  label.category: Category
+  label.tags: Tags
+  label.collections: Collections
+  label.id: ID
+  label.ids: IDs
+  label.page: Page
+  label.query: Query
+  label.results: Results
+  label.sort: Sort
+  label.state: State
+  label.source: Source
+  label.permission: Permission
+  label.visible-categories: Visible categories
+  label.hidden-heads: Hidden heads
+  label.current: Current
+  label.selected: Selected
+  label.entries: Entries
+  label.type: Type
+  label.filter: Filter
+  label.search: Search
+  label.mode: Mode
+  value.none: none
+  value.all: all
+  value.scoped: scoped
+  value.custom: Custom
+  value.remote: Remote
+  value.filter-all: All
+  value.filter-none: None
+  value.draft: DRAFT
+  value.draft-prefix: 'DRAFT - '
+  value.overflow: +%count% more
+  hint.browse-category: Click to browse this category.
+  hint.browse-tag: Click to browse this tag.
+  hint.browse-collection: Click to browse this collection.
+  hint.edit-custom-category: Right-click to edit this custom category.
+  hint.change-options: Click to change options.
+  hint.edit-head: Press Q to edit.
+  hint.no-heads-found: Try a different search query.
+  hint.no-filter-permission: You cannot change search filters.
+  hint.enter-query: Click to enter a text query.
+  hint.enter-ids: Click to enter comma-separated IDs.
+  hint.ids-format: 'Use remote:<id>, custom:<id>, player:<name|uuid>, or bare remote IDs.'
+  hint.toggle-categories: Click to toggle categories.
+  hint.toggle-tags: Click to toggle tags.
+  hint.toggle-collections: Click to toggle collections.
+  hint.clear-filters: Click to clear selected filters.
+  hint.clear-filter: Remove selected %type%.
+  hint.run-search: Open the matching heads.
+  hint.cycle-sort: Click to cycle sort mode.
+  hint.toggle-direction: Click to toggle direction.
+  hint.filter-select: Click to select.
+  hint.filter-deselect: Selected. Click to remove.
+  hint.category-scope: Use tag or collection filters inside this category.
+  hint.no-settings-permission: You cannot open this settings page.
+  hint.no-language-permission: You cannot change HeadDB language settings.
+  hint.language-select: Click to select this language.
+  hint.language-selected: Currently selected.
+  hint.reset-language: Reset to the configured default locale.
+  hint.current-locale: 'Current: %locale%'
+  hint.locale-count: 'Locales: %count%'
+  hint.page-line: 'Page: %page% / %pages%'
+  hint.click-receive: Click a head to receive it.
+  hint.keybind-press: 'Press '
+  hint.keybind-edit: ' to edit.'
 slots:
   main.player-heads: 11
   main.browse: 13

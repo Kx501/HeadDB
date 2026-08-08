@@ -3,6 +3,7 @@ package io.github.silentdevelopment.headdb.paper.command.subcommand;
 import io.github.silentdevelopment.headdb.paper.HeadDBPlugin;
 import io.github.silentdevelopment.headdb.paper.command.CommandRequirements;
 import io.github.silentdevelopment.headdb.paper.command.format.SupportReport;
+import io.github.silentdevelopment.headdb.paper.message.MessageKey;
 import io.github.silentdevelopment.headdb.paper.permission.Permissions;
 import io.github.silentdevelopment.relay.command.Command;
 import io.github.silentdevelopment.relay.paper.command.AbstractPaperCommand;
@@ -44,12 +45,12 @@ public final class ReportCommand extends AbstractPaperCommand {
     }
 
     private void sendPlayerReport(@NotNull PaperCommandContext context, @NotNull String report) {
-        Component copy = Component.text("HERE", NamedTextColor.GOLD).decorate(TextDecoration.BOLD).clickEvent(ClickEvent.copyToClipboard(report)).hoverEvent(HoverEvent.showText(Component.text("Copy the full support report.", NamedTextColor.GRAY)));
+        Component copy = Component.text(text(context, "copy-label", "HERE"), NamedTextColor.GOLD).decorate(TextDecoration.BOLD).clickEvent(ClickEvent.copyToClipboard(report)).hoverEvent(HoverEvent.showText(Component.text(text(context, "copy-hover", "Copy the full support report."), NamedTextColor.GRAY)));
 
         plugin.messages().send(context.sender(), Component.empty());
-        plugin.messages().send(context.sender(), Component.text("> ", NamedTextColor.DARK_GRAY).append(Component.text("Report", NamedTextColor.RED)));
-        plugin.messages().send(context.sender(), Component.text("Click ", NamedTextColor.GRAY).append(copy).append(Component.text(" to copy the full support report.", NamedTextColor.GRAY)));
-        plugin.messages().send(context.sender(), Component.text("Paste this report when asking for support.", NamedTextColor.GRAY));
+        plugin.messages().send(context.sender(), plugin.messages().render(context.sender(), MessageKey.COMMAND_REPORT_HEADER));
+        plugin.messages().send(context.sender(), Component.text(text(context, "copy-prefix", "Click") + " ", NamedTextColor.GRAY).append(copy).append(Component.text(" " + text(context, "copy-suffix", "to copy the full support report."), NamedTextColor.GRAY)));
+        plugin.messages().send(context.sender(), plugin.messages().render(context.sender(), MessageKey.COMMAND_REPORT_PASTE_HINT));
         plugin.messages().send(context.sender(), Component.empty());
     }
 
@@ -66,6 +67,10 @@ public final class ReportCommand extends AbstractPaperCommand {
         }
 
         plugin.messages().send(context.sender(), Component.empty());
+    }
+
+    private @NotNull String text(@NotNull PaperCommandContext context, @NotNull String key, @NotNull String fallback) {
+        return plugin.messages().text(context.sender(), "command.report." + key, fallback);
     }
 
 }

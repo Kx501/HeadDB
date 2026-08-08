@@ -4,6 +4,8 @@ import io.github.silentdevelopment.headdb.model.Head;
 import io.github.silentdevelopment.headdb.paper.HeadDBPlugin;
 import io.github.silentdevelopment.headdb.paper.command.CommandRequirements;
 import io.github.silentdevelopment.headdb.paper.command.Suggestions;
+import io.github.silentdevelopment.headdb.paper.message.MessageException;
+import io.github.silentdevelopment.headdb.paper.message.MessageKey;
 import io.github.silentdevelopment.headdb.paper.permission.Permissions;
 import io.github.silentdevelopment.headdb.paper.sound.SoundKey;
 import io.github.silentdevelopment.relay.argument.Argument;
@@ -12,8 +14,6 @@ import io.github.silentdevelopment.relay.paper.argument.PaperArgumentTypes;
 import io.github.silentdevelopment.relay.paper.command.AbstractPaperCommand;
 import io.github.silentdevelopment.relay.paper.command.PaperCommands;
 import io.github.silentdevelopment.relay.paper.command.context.PaperCommandContext;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -44,7 +44,7 @@ public final class PlayerCommand extends AbstractPaperCommand {
         try {
             parsedTarget = parseTarget(context);
         } catch (IllegalArgumentException exception) {
-            plugin.messages().send(context.sender(), plugin.messages().invalidArgument(context.sender(), exception.getMessage()));
+            plugin.messages().send(context.sender(), plugin.messages().invalidArgument(context.sender(), exception));
             play(context, SoundKey.INVALID);
             return;
         }
@@ -55,15 +55,15 @@ public final class PlayerCommand extends AbstractPaperCommand {
         }
 
         if (!Permissions.canPlayerHeadFor(context.sender(), target)) {
-            plugin.messages().send(context.sender(), plugin.messages().render(context.sender(), io.github.silentdevelopment.headdb.paper.message.MessageKey.COMMAND_ERROR_NO_PERMISSION));
+            send(context, MessageKey.COMMAND_ERROR_NO_PERMISSION, Map.of());
             play(context, SoundKey.NO_PERMISSION);
             return;
         }
 
-        plugin.messages().send(context.sender(), Component.text("Resolving player head for ", NamedTextColor.GRAY).append(Component.text(lookup, NamedTextColor.GOLD)).append(Component.text("...", NamedTextColor.GRAY)));
+        send(context, MessageKey.COMMAND_PLAYER_RESOLVING, Map.of("player", lookup));
         plugin.headRegistry().playerHeads().resolve(lookup).whenComplete((head, throwable) -> plugin.getServer().getGlobalRegionScheduler().execute(plugin, () -> {
             if (throwable != null) {
-                plugin.messages().send(context.sender(), Component.text("Could not resolve player head: ", NamedTextColor.RED).append(Component.text(message(throwable), NamedTextColor.GRAY)));
+                send(context, MessageKey.COMMAND_PLAYER_RESOLVE_FAILED, Map.of("message", message(throwable)));
                 play(context, SoundKey.INVALID);
                 return;
             }
@@ -108,7 +108,7 @@ public final class PlayerCommand extends AbstractPaperCommand {
 
         String second = context.get(TARGET).trim();
         if (second.isEmpty()) {
-            throw new IllegalArgumentException("Usage: /hdb player <name|uuid> [player] [amount]");
+            throw new MessageException(MessageKey.COMMAND_USAGE_PLAYER_ARGS);
         }
 
         if (context.has(AMOUNT)) {
@@ -127,7 +127,7 @@ public final class PlayerCommand extends AbstractPaperCommand {
             if (context.isPlayer()) {
                 return context.player();
             }
-            plugin.messages().send(context.sender(), Component.text("Usage: /hdb player <name|uuid> <player> [amount]", NamedTextColor.RED));
+            send(context, MessageKey.COMMAND_USAGE_PLAYER, Map.of());
             play(context, SoundKey.INVALID);
             return null;
         }
@@ -158,6 +158,10 @@ public final class PlayerCommand extends AbstractPaperCommand {
         plugin.sounds().play(context.player(), key);
     }
 
+    private void send(@NotNull PaperCommandContext context, @NotNull MessageKey key, @NotNull Map<String, String> placeholders) {
+        plugin.messages().send(context.sender(), plugin.messages().render(context.sender(), key, placeholders));
+    }
+
     private static boolean isAmount(@NotNull String raw) {
         try {
             parseAmount(raw);
@@ -173,11 +177,11 @@ public final class PlayerCommand extends AbstractPaperCommand {
         try {
             amount = Integer.parseInt(raw.trim());
         } catch (NumberFormatException exception) {
-            throw new IllegalArgumentException("Amount must be a number.");
+            throw new MessageException(MessageKey.COMMAND_ERROR_AMOUNT_NUMBER);
         }
 
         if (amount < 1 || amount > MAX_AMOUNT) {
-            throw new IllegalArgumentException("Amount must be between 1 and " + MAX_AMOUNT + ".");
+            throw new MessageException(MessageKey.COMMAND_ERROR_AMOUNT_RANGE, Map.of("max", String.valueOf(MAX_AMOUNT)));
         }
 
         return amount;

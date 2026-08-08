@@ -7,6 +7,7 @@ import io.github.silentdevelopment.headdb.model.Head;
 import io.github.silentdevelopment.headdb.model.HeadId;
 import io.github.silentdevelopment.headdb.paper.HeadDBPlugin;
 import io.github.silentdevelopment.headdb.paper.gui.common.GuiItems;
+import io.github.silentdevelopment.headdb.paper.local.texture.TextureValues;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -21,7 +22,6 @@ import org.jetbrains.annotations.NotNull;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
@@ -31,7 +31,6 @@ import java.util.UUID;
 
 public final class DefaultHeadItemFactory implements HeadItemFactory {
 
-    private static final String TEXTURE_BASE_URL = "https://textures.minecraft.net/texture/";
     private static final int MAX_LORE_IDS = 6;
 
     private final HeadDBPlugin plugin;
@@ -115,7 +114,7 @@ public final class DefaultHeadItemFactory implements HeadItemFactory {
 
     private static @NotNull PlayerProfile profile(@NotNull Head head, @NotNull String textureHash) {
         PlayerProfile profile = Bukkit.createProfileExact(profileId(head), profileName(head));
-        profile.setProperty(new ProfileProperty("textures", textureValue(textureHash)));
+        profile.setProperty(new ProfileProperty("textures", TextureValues.encode(textureHash)));
         return profile;
     }
 
@@ -137,12 +136,6 @@ public final class DefaultHeadItemFactory implements HeadItemFactory {
 
         return sanitized;
     }
-
-    private static @NotNull String textureValue(@NotNull String textureHash) {
-        String json = "{\"textures\":{\"SKIN\":{\"url\":\"" + TEXTURE_BASE_URL + textureHash + "\"}}}";
-        return Base64.getEncoder().encodeToString(json.getBytes(StandardCharsets.UTF_8));
-    }
-
 
     private static @NotNull HeadId parseCanonicalHeadId(@NotNull String raw) {
         String value = raw.trim();
@@ -194,11 +187,6 @@ public final class DefaultHeadItemFactory implements HeadItemFactory {
         }
     }
 
-    private static @NotNull Component name(@NotNull Head head) {
-        return Component.text(head.name(), NamedTextColor.GOLD)
-                .decoration(TextDecoration.ITALIC, false);
-    }
-
     private @NotNull List<Component> lore(@NotNull Head head) {
         Objects.requireNonNull(head, "head");
 
@@ -219,22 +207,16 @@ public final class DefaultHeadItemFactory implements HeadItemFactory {
         }
 
         if (!head.id().isPlayer()) {
-            lore.add(line("Category", head.category()));
-            lore.add(line("Tags", join(head.tags())));
-            lore.add(line("Collections", join(head.collections())));
+            lore.add(line(text("label.category", "Category"), head.category()));
+            lore.add(line(text("label.tags", "Tags"), join(head.tags())));
+            lore.add(line(text("label.collections", "Collections"), join(head.collections())));
         }
 
         return cleanLore(lore);
     }
 
-    private static @NotNull String values(@NotNull Collection<String> values) {
-        Objects.requireNonNull(values, "values");
-
-        if (values.isEmpty()) {
-            return "none";
-        }
-
-        return String.join(", ", values);
+    private @NotNull String text(@NotNull String key, @NotNull String fallback) {
+        return plugin.guiConfig().text(key, fallback);
     }
 
     private static @NotNull List<Component> cleanLore(@NotNull List<Component> lore) {
@@ -255,9 +237,9 @@ public final class DefaultHeadItemFactory implements HeadItemFactory {
                 .decoration(TextDecoration.ITALIC, false);
     }
 
-    private static @NotNull String join(@NotNull Collection<String> values) {
+    private @NotNull String join(@NotNull Collection<String> values) {
         if (values.isEmpty()) {
-            return "none";
+            return text("value.none", "none");
         }
 
         StringJoiner joiner = new StringJoiner(", ");
@@ -265,7 +247,7 @@ public final class DefaultHeadItemFactory implements HeadItemFactory {
 
         for (String value : values) {
             if (index >= MAX_LORE_IDS) {
-                joiner.add("+" + (values.size() - MAX_LORE_IDS) + " more");
+                joiner.add(text("value.overflow", "+%count% more").replace("%count%", String.valueOf(values.size() - MAX_LORE_IDS)));
                 break;
             }
 

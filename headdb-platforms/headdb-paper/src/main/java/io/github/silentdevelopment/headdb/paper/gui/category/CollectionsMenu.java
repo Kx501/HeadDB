@@ -169,7 +169,7 @@ public final class CollectionsMenu {
 
         if (action.equals(ACTION_SEARCH)) {
             player.closeInventory();
-            player.getScheduler().run(plugin, task -> plugin.prompts().request(player, Component.text("Enter collection search text.", NamedTextColor.GOLD), value -> open(plugin, player, 0, holder.customOnly(), value), () -> open(plugin, player, holder.page(), holder.customOnly(), holder.query())), () -> {});
+            player.getScheduler().run(plugin, task -> plugin.prompts().request(player, plugin.messages().render(player, MessageKey.GUI_COLLECTIONS_SEARCH_PROMPT), value -> open(plugin, player, 0, holder.customOnly(), value), () -> open(plugin, player, holder.page(), holder.customOnly(), holder.query())), () -> {});
             return;
         }
 
@@ -204,12 +204,12 @@ public final class CollectionsMenu {
                 lore.add(Component.empty());
             }
             if (plugin.adminModes().enabled(player)) {
-                lore.add(GuiItems.idDetail("Heads", heads));
-                lore.add(GuiItems.idDetail("ID", entry.id()));
-                lore.add(GuiItems.idDetail("Type", custom ? "Custom" : "Remote"));
+                lore.add(GuiItems.idDetail(text(plugin, "label.heads", "Heads"), heads));
+                lore.add(GuiItems.idDetail(text(plugin, "label.id", "ID"), entry.id()));
+                lore.add(GuiItems.idDetail(text(plugin, "label.type", "Type"), custom ? text(plugin, "value.custom", "Custom") : text(plugin, "value.remote", "Remote")));
                 lore.add(Component.empty());
             }
-            lore.add(GuiItems.lore("Click to browse this collection.", NamedTextColor.GREEN));
+            lore.add(GuiItems.lore(text(plugin, "hint.browse-collection", "Click to browse this collection."), NamedTextColor.GREEN));
             meta.displayName(GuiItems.name(entry.name(), custom ? NamedTextColor.YELLOW : NamedTextColor.GOLD));
             meta.lore(lore);
         });
@@ -250,11 +250,11 @@ public final class CollectionsMenu {
             inventory.setItem(SLOT_PREVIOUS, previous);
         }
 
-        inventory.setItem(SLOT_INFO, GuiHeadIcons.icon(plugin, plugin.guiConfig().icon("info"), GuiItems.name("Info", NamedTextColor.GOLD), List.of(
-                GuiItems.idDetail("Collections", entries),
-                GuiItems.idDetail("Page", (page + 1) + " / " + Math.max(1, pages)),
-                GuiItems.idDetail("Filter", customOnly ? "Custom" : "All"),
-                GuiItems.idDetail("Search", query.isBlank() ? "None" : query)
+        inventory.setItem(SLOT_INFO, GuiHeadIcons.icon(plugin, plugin.guiConfig().icon("info"), GuiItems.name(text(plugin, "name.info", "Info"), NamedTextColor.GOLD), List.of(
+                GuiItems.idDetail(text(plugin, "label.collections", "Collections"), entries),
+                GuiItems.idDetail(text(plugin, "label.page", "Page"), (page + 1) + " / " + Math.max(1, pages)),
+                GuiItems.idDetail(text(plugin, "label.filter", "Filter"), customOnly ? text(plugin, "value.custom", "Custom") : text(plugin, "value.filter-all", "All")),
+                GuiItems.idDetail(text(plugin, "label.search", "Search"), query.isBlank() ? text(plugin, "value.filter-none", "None") : query)
         )));
 
         if (page + 1 < pages) {
@@ -327,6 +327,10 @@ public final class CollectionsMenu {
                 .replace("%page%", String.valueOf(page + 1))
                 .replace("%pages%", String.valueOf(Math.max(1, pages)))
                 .replace("%query%", query.trim());
+    }
+
+    private static @NotNull String text(@NotNull HeadDBPlugin plugin, @NotNull String key, @NotNull String fallback) {
+        return plugin.guiConfig().text(key, fallback);
     }
 
     private static int pageCount(int entries) {

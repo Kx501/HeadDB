@@ -10,8 +10,13 @@ import java.util.regex.Pattern;
 public final class PlatformRequirements {
 
     public static final int REQUIRED_JAVA_FEATURE = 25;
-    public static final int REQUIRED_PAPER_MAJOR = 26;
-    public static final String REQUIRED_PAPER_VERSION = "26.1.2+";
+    public static final String REQUIRED_PAPER_VERSION = "1.21.11+";
+
+    /**
+     * Paper's new version scheme starts at major 26, so a plain component-wise comparison against
+     * this floor accepts both {@code 1.21.11+} and {@code 26.x}.
+     */
+    private static final int[] MIN_PAPER_VERSION = {1, 21, 11};
 
     private static final Pattern VERSION_TOKEN = Pattern.compile("(?<!\\d)(\\d+)\\.(\\d+)(?:\\.(\\d+))?(?!\\d)");
 
@@ -54,7 +59,7 @@ public final class PlatformRequirements {
 
         if (!compatibility.paperSupported()) {
             plugin.getSLF4JLogger().error(
-                    "Unsupported Paper runtime. Older Paper builds cannot safely load HeadDB's Java 25 runtime. Update to Paper {}.",
+                    "Unsupported Paper runtime. Update to Paper {}.",
                     REQUIRED_PAPER_VERSION
             );
         }
@@ -71,7 +76,7 @@ public final class PlatformRequirements {
         String bukkitVersion = value(plugin.getServer().getBukkitVersion());
 
         boolean javaSupported = javaFeature >= REQUIRED_JAVA_FEATURE;
-        boolean paperSupported = paper26OrNewer(serverVersion + " " + bukkitVersion);
+        boolean paperSupported = paperSupported(serverVersion + " " + bukkitVersion);
 
         return new Compatibility(
                 javaFeature,
@@ -83,18 +88,32 @@ public final class PlatformRequirements {
         );
     }
 
-    private static boolean paper26OrNewer(@NotNull String version) {
+    private static boolean paperSupported(@NotNull String version) {
         Matcher matcher = VERSION_TOKEN.matcher(version);
 
         while (matcher.find()) {
-            int major = parseInt(matcher.group(1));
+            int[] candidate = {
+                    parseInt(matcher.group(1)),
+                    parseInt(matcher.group(2)),
+                    matcher.group(3) == null ? 0 : parseInt(matcher.group(3))
+            };
 
-            if (major >= REQUIRED_PAPER_MAJOR) {
+            if (atLeastMinimum(candidate)) {
                 return true;
             }
         }
 
         return false;
+    }
+
+    private static boolean atLeastMinimum(int[] candidate) {
+        for (int index = 0; index < MIN_PAPER_VERSION.length; index++) {
+            if (candidate[index] != MIN_PAPER_VERSION[index]) {
+                return candidate[index] > MIN_PAPER_VERSION[index];
+            }
+        }
+
+        return true;
     }
 
     private static int parseInt(@NotNull String value) {

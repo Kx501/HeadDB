@@ -13,7 +13,6 @@ import io.github.silentdevelopment.headdb.paper.local.override.RemoteHeadOverrid
 import io.github.silentdevelopment.headdb.paper.permission.Permissions;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
-import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -136,7 +135,7 @@ public final class HiddenHeadsMenu {
         plugin.headRegistry().onLocalMutation();
         plugin.clearItemCache();
         plugin.clearSearchCache();
-        player.sendMessage(Component.text("Head shown: ", NamedTextColor.GRAY).append(Component.text(GuiLabels.head(plugin, player, id.get()), NamedTextColor.GOLD)));
+        player.sendMessage(plugin.messages().render(player, io.github.silentdevelopment.headdb.paper.message.MessageKey.GUI_HEAD_SHOWN, Map.of("head", GuiLabels.head(plugin, player, id.get()))));
         plugin.sounds().play(player, io.github.silentdevelopment.headdb.paper.sound.SoundKey.SHOW_HEAD);
         open(plugin, player, holder.page());
         return true;
@@ -202,7 +201,7 @@ public final class HiddenHeadsMenu {
             plugin.headRegistry().onLocalMutation();
             plugin.clearItemCache();
             plugin.clearSearchCache();
-            player.sendMessage(Component.text("All hidden heads were shown.", NamedTextColor.GREEN));
+            player.sendMessage(plugin.messages().render(player, io.github.silentdevelopment.headdb.paper.message.MessageKey.GUI_HIDDEN_ALL_SHOWN));
             open(plugin, player, 0);
         }
     }

@@ -67,7 +67,7 @@ public final class LanguagesPageFactory implements PaperPageFactory<MenuState> {
         page.type(MenuType.GENERIC_9X6);
         Set<Integer> reservedSlots = new HashSet<>();
         Player player = player(context);
-        page.title(GuiTitles.title("HeadDB Languages", player != null && plugin.adminModes().enabled(player)));
+        page.title(GuiTitles.title(text("title.languages", "HeadDB Languages"), player != null && plugin.adminModes().enabled(player)));
 
         set(page, reservedSlots, SLOT_BACK, backButton());
 
@@ -134,8 +134,8 @@ public final class LanguagesPageFactory implements PaperPageFactory<MenuState> {
         NamedTextColor color = selected ? NamedTextColor.GREEN : NamedTextColor.GOLD;
 
         return GuiHeadIcons.<MenuState>button(plugin, "language_" + locale.id().value().replace('-', '_').replace(':', '_').toLowerCase(java.util.Locale.ROOT), "languages", GuiItems.name(locale.displayName(), color), List.of(
-                GuiItems.idDetail("ID", locale.id().value()),
-                GuiItems.lore(selected ? "Currently selected." : "Click to select this language.", selected ? NamedTextColor.GREEN : NamedTextColor.GRAY)
+                GuiItems.idDetail(text("label.id", "ID"), locale.id().value()),
+                GuiItems.lore(selected ? text("hint.language-selected", "Currently selected.") : text("hint.language-select", "Click to select this language."), selected ? NamedTextColor.GREEN : NamedTextColor.GRAY)
         ), context -> {
             Player player = player(context);
 
@@ -173,18 +173,20 @@ public final class LanguagesPageFactory implements PaperPageFactory<MenuState> {
     }
 
     private @NotNull ItemElement<MenuState> infoButton(int localeCount, int pageIndex, int pageCount) {
-        return GuiHeadIcons.<MenuState>button(plugin, "languages_info", "info", GuiItems.name("Languages", NamedTextColor.GOLD), List.of(
-                GuiItems.lore("Locales: " + localeCount, NamedTextColor.GRAY),
-                GuiItems.lore("Page: " + (pageIndex + 1) + " / " + Math.max(1, pageCount), NamedTextColor.GRAY)
+        return GuiHeadIcons.<MenuState>button(plugin, "languages_info", "info", GuiItems.name(text("name.languages", "Languages"), NamedTextColor.GOLD), List.of(
+                GuiItems.lore(text("hint.locale-count", "Locales: %count%").replace("%count%", String.valueOf(localeCount)), NamedTextColor.GRAY),
+                GuiItems.lore(text("hint.page-line", "Page: %page% / %pages%")
+                        .replace("%page%", String.valueOf(pageIndex + 1))
+                        .replace("%pages%", String.valueOf(Math.max(1, pageCount))), NamedTextColor.GRAY)
         ), ignored -> {});
     }
 
     private @NotNull ItemElement<MenuState> resetLanguageButton(@NotNull Player viewer) {
         LocaleOption current = plugin.messages().resolvedLocaleOption(viewer);
 
-        return GuiHeadIcons.<MenuState>button(plugin, "reset_language", "reset-language", GuiItems.name("Reset Language", NamedTextColor.RED), List.of(
-                GuiItems.lore("Current: " + current.displayName(), NamedTextColor.GRAY),
-                GuiItems.lore("Reset to the configured default locale.", NamedTextColor.GRAY)
+        return GuiHeadIcons.<MenuState>button(plugin, "reset_language", "reset-language", GuiItems.name(text("name.reset-language", "Reset Language"), NamedTextColor.RED), List.of(
+                GuiItems.lore(text("hint.current-locale", "Current: %locale%").replace("%locale%", current.displayName()), NamedTextColor.GRAY),
+                GuiItems.lore(text("hint.reset-language", "Reset to the configured default locale."), NamedTextColor.GRAY)
         ), context -> {
             Player player = player(context);
 
@@ -204,7 +206,11 @@ public final class LanguagesPageFactory implements PaperPageFactory<MenuState> {
     }
 
     private @NotNull ItemElement<MenuState> deniedButton() {
-        return GuiHeadIcons.<MenuState>button(plugin, "languages_denied", "no-permission", GuiItems.name("No Permission", NamedTextColor.RED), List.of(GuiItems.lore("You cannot change HeadDB language settings.", NamedTextColor.GRAY)), ignored -> {});
+        return GuiHeadIcons.<MenuState>button(plugin, "languages_denied", "no-permission", GuiItems.name(text("name.no-permission", "No Permission"), NamedTextColor.RED), List.of(GuiItems.lore(text("hint.no-language-permission", "You cannot change HeadDB language settings."), NamedTextColor.GRAY)), ignored -> {});
+    }
+
+    private @NotNull String text(@NotNull String key, @NotNull String fallback) {
+        return plugin.guiConfig().text(key, fallback);
     }
 
     private static int languagePage(@NotNull GuiContext<MenuState> context) {

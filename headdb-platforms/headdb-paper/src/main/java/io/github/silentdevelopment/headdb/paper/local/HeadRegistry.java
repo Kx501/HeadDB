@@ -16,6 +16,8 @@ import io.github.silentdevelopment.headdb.paper.local.override.RemoteHeadOverrid
 import io.github.silentdevelopment.headdb.paper.local.override.RemoteHeadOverrideStore;
 import io.github.silentdevelopment.headdb.paper.local.player.PlayerHeadService;
 import io.github.silentdevelopment.headdb.paper.local.taxonomy.CustomTaxonomyService;
+import io.github.silentdevelopment.headdb.paper.message.MessageException;
+import io.github.silentdevelopment.headdb.paper.message.MessageKey;
 import io.github.silentdevelopment.headdb.query.HeadQuery;
 import io.github.silentdevelopment.headdb.query.HeadQueryResult;
 import io.github.silentdevelopment.headdb.query.HeadSort;
@@ -595,7 +597,7 @@ public final class HeadRegistry implements io.github.silentdevelopment.headdb.re
     private static @NotNull String normalizeId(@NotNull String id) {
         String normalized = id.trim().toLowerCase(Locale.ROOT);
         if (normalized.isEmpty()) {
-            throw new IllegalArgumentException("ID cannot be empty.");
+            throw new MessageException(MessageKey.COMMAND_ERROR_ID_BLANK);
         }
         return normalized;
     }

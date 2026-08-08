@@ -3,6 +3,8 @@ package io.github.silentdevelopment.headdb.paper.gui.category;
 import io.github.silentdevelopment.headdb.model.HeadCategory;
 import io.github.silentdevelopment.headdb.model.HeadId;
 import io.github.silentdevelopment.headdb.paper.gui.common.GuiMaterials;
+import io.github.silentdevelopment.headdb.paper.message.MessageException;
+import io.github.silentdevelopment.headdb.paper.message.MessageKey;
 import org.bukkit.Material;
 import org.jetbrains.annotations.NotNull;
 
@@ -35,11 +37,11 @@ public record CustomCategory(@NotNull String id, @NotNull String name, @NotNull 
         headIds = Set.copyOf(new LinkedHashSet<>(headIds));
 
         if (id.isBlank()) {
-            throw new IllegalArgumentException("Custom category id cannot be blank.");
+            throw new MessageException(MessageKey.COMMAND_ERROR_CATEGORY_ID_BLANK);
         }
 
         if (name.isBlank()) {
-            throw new IllegalArgumentException("Custom category name cannot be blank.");
+            throw new MessageException(MessageKey.COMMAND_ERROR_CATEGORY_NAME_BLANK);
         }
     }
 

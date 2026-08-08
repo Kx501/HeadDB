@@ -1,7 +1,9 @@
 package io.github.silentdevelopment.headdb.paper.command.format;
 
+import io.github.silentdevelopment.headdb.paper.message.Messages;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import org.bukkit.command.CommandSender;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -14,7 +16,9 @@ public final class ListFormatter {
         throw new UnsupportedOperationException("This class cannot be instantiated.");
     }
 
-    public static @NotNull List<Component> format(@NotNull String title, @NotNull List<Entry> entries, int page, int pageSize) {
+    public static @NotNull List<Component> format(@NotNull Messages messages, @NotNull CommandSender sender, @NotNull String title, @NotNull List<Entry> entries, int page, int pageSize) {
+        Objects.requireNonNull(messages, "messages");
+        Objects.requireNonNull(sender, "sender");
         Objects.requireNonNull(title, "title");
         Objects.requireNonNull(entries, "entries");
 
@@ -28,7 +32,7 @@ public final class ListFormatter {
         lines.add(Component.text("> ", NamedTextColor.DARK_GRAY).append(Component.text(title, NamedTextColor.RED)).append(Component.text(" [" + safePage + "/" + totalPages + "]", NamedTextColor.GRAY)));
 
         if (entries.isEmpty()) {
-            lines.add(Component.text("  No entries found.", NamedTextColor.GRAY));
+            lines.add(Component.text("  " + messages.text(sender, "command.list.empty", "No entries found."), NamedTextColor.GRAY));
             lines.add(Component.empty());
             return List.copyOf(lines);
         }

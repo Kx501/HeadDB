@@ -38,12 +38,18 @@
         <lib.strata.version>403557ff80</lib.strata.version>
 
         <sqlite-jdbc.version>3.53.2.0</sqlite-jdbc.version>
+        <placeholderapi.version>2.12.3</placeholderapi.version>
     </properties>
 
     <repositories>
         <repository>
             <id>jitpack.io</id>
             <url>https://jitpack.io</url>
+        </repository>
+
+        <repository>
+            <id>extendedclip</id>
+            <url>https://repo.extendedclip.com/releases/</url>
         </repository>
     </repositories>
 
@@ -195,6 +201,13 @@
             <groupId>com.github.MilkBowl</groupId>
             <artifactId>VaultAPI</artifactId>
             <version>1.7</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>me.clip</groupId>
+            <artifactId>placeholderapi</artifactId>
+            <version>${placeholderapi.version}</version>
             <scope>provided</scope>
         </dependency>
 

@@ -53,7 +53,7 @@ public final class SearchCommand extends AbstractPaperCommandGroup {
             String query = context.has(QUERY) ? context.get(QUERY).trim() : "";
             request = SearchOptions.advancedRequest(context, query);
         } catch (IllegalArgumentException exception) {
-            plugin.messages().send(context.sender(), plugin.messages().invalidArgument(context.sender(), exception.getMessage()));
+            plugin.messages().send(context.sender(), plugin.messages().invalidArgument(context.sender(), exception));
             return;
         }
 

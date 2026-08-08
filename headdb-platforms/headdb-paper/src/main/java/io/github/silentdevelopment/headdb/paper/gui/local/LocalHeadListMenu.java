@@ -36,7 +36,7 @@ import java.util.function.Consumer;
 
 public final class LocalHeadListMenu {
 
-    public static final String CUSTOM_TITLE = "More Heads";
+    public static final String CUSTOM_TITLE = "Custom Heads";
     public static final String PLAYER_TITLE = "Player Heads";
 
     private static final int SIZE = 54;
@@ -174,9 +174,9 @@ public final class LocalHeadListMenu {
                 item.editMeta(meta -> {
                     List<Component> lore = meta.lore() == null ? new ArrayList<>() : new ArrayList<>(meta.lore());
                     lore.add(Component.empty());
-                    lore.add(GuiItems.idDetail("ID", headIdLabel(head.id())));
-                    lore.add(GuiItems.metaDetail("Category", head.category()));
-                    lore.add(Component.text("Press ", NamedTextColor.GRAY).append(Component.keybind("key.drop", NamedTextColor.GOLD)).append(Component.text(" to edit.", NamedTextColor.GRAY)).decoration(TextDecoration.ITALIC, false));
+                    lore.add(GuiItems.idDetail(text(plugin, "label.id", "ID"), headIdLabel(head.id())));
+                    lore.add(GuiItems.metaDetail(text(plugin, "label.category", "Category"), head.category()));
+                    lore.add(editHint(plugin));
                     meta.lore(lore);
                 });
             }
@@ -191,7 +191,7 @@ public final class LocalHeadListMenu {
         }
 
         inventory.setItem(SLOT_BACK, control(plugin, ACTION_BACK, "back"));
-        inventory.setItem(SLOT_INFO, info(type, page, pages, totalHeads, adminMode));
+        inventory.setItem(SLOT_INFO, info(plugin, type, page, pages, totalHeads, adminMode));
 
         if (page + 1 < pages) {
             inventory.setItem(SLOT_NEXT, control(plugin, ACTION_NEXT, "next"));
@@ -249,16 +249,27 @@ public final class LocalHeadListMenu {
         return item;
     }
 
-    private static @NotNull ItemStack info(@NotNull LocalHeadListType type, int page, int pages, int totalHeads, boolean adminMode) {
+    private static @NotNull ItemStack info(@NotNull HeadDBPlugin plugin, @NotNull LocalHeadListType type, int page, int pages, int totalHeads, boolean adminMode) {
         List<Component> lore = new ArrayList<>();
-        lore.add(GuiItems.lore("Page: " + (page + 1) + " / " + pages, NamedTextColor.GRAY));
-        lore.add(GuiItems.idDetail("Heads", totalHeads));
+        lore.add(GuiItems.lore(text(plugin, "hint.page-line", "Page: %page% / %pages%").replace("%page%", String.valueOf(page + 1)).replace("%pages%", String.valueOf(pages)), NamedTextColor.GRAY));
+        lore.add(GuiItems.idDetail(text(plugin, "label.heads", "Heads"), totalHeads));
         lore.add(Component.empty());
-        lore.add(GuiItems.lore("Click a head to receive it.", NamedTextColor.GREEN));
+        lore.add(GuiItems.lore(text(plugin, "hint.click-receive", "Click a head to receive it."), NamedTextColor.GREEN));
         if (adminMode) {
-            lore.add(Component.text("Press ", NamedTextColor.GRAY).append(Component.keybind("key.drop", NamedTextColor.GOLD)).append(Component.text(" to edit.", NamedTextColor.GRAY)).decoration(TextDecoration.ITALIC, false));
+            lore.add(editHint(plugin));
         }
-        return GuiItems.item(Material.BOOK, GuiItems.name(type.displayName(), NamedTextColor.GOLD), lore);
+        return GuiItems.item(Material.BOOK, GuiItems.name(text(plugin, type.textKey(), type.displayName()), NamedTextColor.GOLD), lore);
+    }
+
+    private static @NotNull Component editHint(@NotNull HeadDBPlugin plugin) {
+        return Component.text(text(plugin, "hint.keybind-press", "Press "), NamedTextColor.GRAY)
+                .append(Component.keybind("key.drop", NamedTextColor.GOLD))
+                .append(Component.text(text(plugin, "hint.keybind-edit", " to edit."), NamedTextColor.GRAY))
+                .decoration(TextDecoration.ITALIC, false);
+    }
+
+    private static @NotNull String text(@NotNull HeadDBPlugin plugin, @NotNull String key, @NotNull String fallback) {
+        return plugin.guiConfig().text(key, fallback);
     }
 
     private static void fillBorder(@NotNull Inventory inventory) {
@@ -326,17 +337,23 @@ public final class LocalHeadListMenu {
     }
 
     private enum LocalHeadListType {
-        CUSTOM(CUSTOM_TITLE),
-        PLAYER(PLAYER_TITLE);
+        CUSTOM(CUSTOM_TITLE, "name.custom-heads"),
+        PLAYER(PLAYER_TITLE, "name.player-heads");
 
         private final String displayName;
+        private final String textKey;
 
-        LocalHeadListType(@NotNull String displayName) {
+        LocalHeadListType(@NotNull String displayName, @NotNull String textKey) {
             this.displayName = Objects.requireNonNull(displayName, "displayName");
+            this.textKey = Objects.requireNonNull(textKey, "textKey");
         }
 
         private @NotNull String displayName() {
             return displayName;
+        }
+
+        private @NotNull String textKey() {
+            return textKey;
         }
     }
 

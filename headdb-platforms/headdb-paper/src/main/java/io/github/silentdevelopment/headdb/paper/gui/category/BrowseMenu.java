@@ -200,10 +200,10 @@ public final class BrowseMenu {
             }
 
             player.closeInventory();
-            player.getScheduler().run(plugin, task -> plugin.prompts().request(player, Component.text("Enter a search query.", NamedTextColor.GOLD), query -> {
+            player.getScheduler().run(plugin, task -> plugin.prompts().request(player, plugin.messages().render(player, MessageKey.GUI_SEARCH_PROMPT), query -> {
                 plugin.guis().openSearch(player, new SearchRequest(query, Set.of(), Set.of(), Set.of(), Set.of(), HeadSort.RELEVANCE, SortDirection.DESCENDING, 1, 28, false), SearchMenuState.BackTarget.BROWSE);
             }, () -> {
-                player.sendMessage(Component.text("Search cancelled.", NamedTextColor.GRAY));
+                player.sendMessage(plugin.messages().render(player, MessageKey.GUI_SEARCH_CANCELLED));
                 open(plugin, player, holder.page());
             }), () -> {});
             return;
@@ -346,9 +346,9 @@ public final class BrowseMenu {
             inventory.setItem(SLOT_PREVIOUS, previous);
         }
 
-        ItemStack info = GuiHeadIcons.icon(plugin, plugin.guiConfig().icon("info"), GuiItems.name("Info", NamedTextColor.GOLD), List.of(
-                GuiItems.idDetail("Categories", categoryCount),
-                GuiItems.idDetail("Page", (page + 1) + " / " + Math.max(1, pages))
+        ItemStack info = GuiHeadIcons.icon(plugin, plugin.guiConfig().icon("info"), GuiItems.name(text(plugin, "name.info", "Info"), NamedTextColor.GOLD), List.of(
+                GuiItems.idDetail(text(plugin, "label.categories", "Categories"), categoryCount),
+                GuiItems.idDetail(text(plugin, "label.page", "Page"), (page + 1) + " / " + Math.max(1, pages))
         ));
         inventory.setItem(SLOT_INFO, info);
 
@@ -375,20 +375,20 @@ public final class BrowseMenu {
                 lore.add(Component.empty());
             }
             if (adminMode) {
-                lore.add(GuiItems.idDetail("Heads", amount));
-                lore.add(GuiItems.idDetail("ID", customCategory.id()));
-                lore.add(GuiItems.idDetail("Permission", Permissions.category(customCategory.id())));
+                lore.add(GuiItems.idDetail(text(plugin, "label.heads", "Heads"), amount));
+                lore.add(GuiItems.idDetail(text(plugin, "label.id", "ID"), customCategory.id()));
+                lore.add(GuiItems.idDetail(text(plugin, "label.permission", "Permission"), Permissions.category(customCategory.id())));
                 if (customCategory.draft()) {
-                    lore.add(GuiItems.idDetail("State", "DRAFT"));
+                    lore.add(GuiItems.idDetail(text(plugin, "label.state", "State"), text(plugin, "value.draft", "DRAFT")));
                 }
                 lore.add(Component.empty());
             }
-            lore.add(GuiItems.lore("Click to browse this category.", NamedTextColor.GREEN));
+            lore.add(GuiItems.lore(text(plugin, "hint.browse-category", "Click to browse this category."), NamedTextColor.GREEN));
             if (adminMode) {
-                lore.add(GuiItems.lore("Right-click to edit this custom category.", NamedTextColor.YELLOW));
+                lore.add(GuiItems.lore(text(plugin, "hint.edit-custom-category", "Right-click to edit this custom category."), NamedTextColor.YELLOW));
             }
 
-            meta.displayName(GuiItems.name(customCategory.draft() ? "DRAFT - " + customCategory.name() : customCategory.name(), customCategory.draft() ? NamedTextColor.YELLOW : NamedTextColor.GOLD));
+            meta.displayName(GuiItems.name(customCategory.draft() ? text(plugin, "value.draft-prefix", "DRAFT - ") + customCategory.name() : customCategory.name(), customCategory.draft() ? NamedTextColor.YELLOW : NamedTextColor.GOLD));
             meta.lore(lore);
             meta.getPersistentDataContainer().remove(HeadItemIds.key(plugin));
         });
@@ -414,12 +414,12 @@ public final class BrowseMenu {
             }
 
             if (adminMode) {
-                lore.add(GuiItems.idDetail("Heads", amount));
-                lore.add(GuiItems.idDetail("ID", category.id()));
+                lore.add(GuiItems.idDetail(text(plugin, "label.heads", "Heads"), amount));
+                lore.add(GuiItems.idDetail(text(plugin, "label.id", "ID"), category.id()));
                 lore.add(Component.empty());
             }
 
-            lore.add(GuiItems.lore("Click to browse this category.", NamedTextColor.GREEN));
+            lore.add(GuiItems.lore(text(plugin, "hint.browse-category", "Click to browse this category."), NamedTextColor.GREEN));
             Component name = configured ? GuiItems.mini(replace(icon.name(), category, amount)) : GuiItems.name(category.name(), NamedTextColor.GOLD);
             meta.displayName(name);
             meta.lore(lore);
@@ -443,6 +443,10 @@ public final class BrowseMenu {
 
     private static @NotNull String categoryIconKey(@NotNull String categoryId) {
         return "category." + categoryId.trim().toLowerCase(java.util.Locale.ROOT).replaceAll("[^a-z0-9_.-]", "_");
+    }
+
+    private static @NotNull String text(@NotNull HeadDBPlugin plugin, @NotNull String key, @NotNull String fallback) {
+        return plugin.guiConfig().text(key, fallback);
     }
 
     private static @NotNull String replace(@NotNull String value, @NotNull HeadCategory category, int amount) {

@@ -8,6 +8,7 @@ import io.github.silentdevelopment.headdb.paper.gui.common.GuiItems;
 import io.github.silentdevelopment.headdb.paper.gui.common.GuiLabels;
 import io.github.silentdevelopment.headdb.paper.gui.common.GuiMaterials;
 import io.github.silentdevelopment.headdb.paper.gui.common.GuiTitles;
+import io.github.silentdevelopment.headdb.paper.message.MessageKey;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
@@ -22,6 +23,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -184,7 +186,7 @@ public final class CategoryMembersMenu {
         }
 
         plugin.customCategories().removeHead(holder.categoryId(), id);
-        player.sendMessage(Component.text("Head removed: ", NamedTextColor.GRAY).append(Component.text(GuiLabels.head(plugin, player, id), NamedTextColor.GOLD)));
+        player.sendMessage(plugin.messages().render(player, MessageKey.GUI_CATEGORY_HEAD_REMOVED, Map.of("head", GuiLabels.head(plugin, player, id))));
         open(plugin, player, holder.categoryId(), holder.page());
     }
 

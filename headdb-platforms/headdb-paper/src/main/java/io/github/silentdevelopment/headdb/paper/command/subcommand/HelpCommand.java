@@ -29,7 +29,7 @@ public final class HelpCommand extends AbstractPaperCommand {
             return;
         }
 
-        for (Component line : HelpFormatter.format(context.sender())) {
+        for (Component line : HelpFormatter.format(plugin.messages(), context.sender())) {
             plugin.messages().send(context.sender(), line);
         }
     }

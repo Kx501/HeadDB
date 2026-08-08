@@ -138,7 +138,7 @@ public final class SettingsPageFactory implements PaperPageFactory<MenuState> {
     private @NotNull ItemElement<MenuState> adminModeButton(@NotNull Player viewer) {
         boolean enabled = plugin.adminModes().enabled(viewer);
         String icon = enabled ? "admin-mode-on" : "admin-mode-off";
-        return GuiHeadIcons.<MenuState>button(plugin, "admin_mode", icon, GuiItems.name("Mode", NamedTextColor.GOLD), GuiItems.miniLore(plugin.guiConfig().icon(icon).lore()), context -> {
+        return GuiHeadIcons.<MenuState>button(plugin, "admin_mode", icon, GuiItems.name(text("label.mode", "Mode"), NamedTextColor.GOLD), GuiItems.miniLore(plugin.guiConfig().icon(icon).lore()), context -> {
             Player player = player(context);
             if (player == null) {
                 return;
@@ -150,7 +150,7 @@ public final class SettingsPageFactory implements PaperPageFactory<MenuState> {
             }
 
             boolean updated = plugin.adminModes().toggle(player);
-            player.sendMessage(Component.text(updated ? "Admin Mode enabled." : "User Mode enabled.", updated ? NamedTextColor.GREEN : NamedTextColor.GRAY));
+            player.sendMessage(plugin.messages().render(player, updated ? MessageKey.GUI_ADMIN_MODE_ENABLED : MessageKey.GUI_USER_MODE_ENABLED));
             context.refresh();
         });
     }
@@ -200,7 +200,11 @@ public final class SettingsPageFactory implements PaperPageFactory<MenuState> {
     }
 
     private @NotNull ItemElement<MenuState> deniedButton() {
-        return GuiHeadIcons.<MenuState>button(plugin, "settings_denied", "no-permission", GuiItems.name("No Permission", NamedTextColor.RED), List.of(GuiItems.lore("You cannot open this settings page.", NamedTextColor.GRAY)), ignored -> {});
+        return GuiHeadIcons.<MenuState>button(plugin, "settings_denied", "no-permission", GuiItems.name(text("name.no-permission", "No Permission"), NamedTextColor.RED), List.of(GuiItems.lore(text("hint.no-settings-permission", "You cannot open this settings page."), NamedTextColor.GRAY)), ignored -> {});
+    }
+
+    private @NotNull String text(@NotNull String key, @NotNull String fallback) {
+        return plugin.guiConfig().text(key, fallback);
     }
 
     private int slot(@NotNull String key, int fallback) {

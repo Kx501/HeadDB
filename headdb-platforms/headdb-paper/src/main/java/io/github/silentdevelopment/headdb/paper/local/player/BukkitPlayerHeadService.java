@@ -4,6 +4,8 @@ import io.github.silentdevelopment.headdb.model.Head;
 import io.github.silentdevelopment.headdb.model.HeadId;
 import io.github.silentdevelopment.headdb.model.HeadTexture;
 import io.github.silentdevelopment.headdb.paper.HeadDBPlugin;
+import io.github.silentdevelopment.headdb.paper.message.MessageException;
+import io.github.silentdevelopment.headdb.paper.message.MessageKey;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.jetbrains.annotations.NotNull;
@@ -15,6 +17,7 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -117,7 +120,7 @@ public final class BukkitPlayerHeadService implements PlayerHeadService {
         }
 
         if (!externalLookup && localKnown(lookup).isEmpty()) {
-            throw new IllegalArgumentException("Unknown local player: " + lookup);
+            throw new MessageException(MessageKey.COMMAND_ERROR_UNKNOWN_LOCAL_PLAYER, Map.of("player", lookup));
         }
 
         OfflinePlayer offlinePlayer = offlinePlayer(lookup);
@@ -175,7 +178,7 @@ public final class BukkitPlayerHeadService implements PlayerHeadService {
         }
 
         if (normalized.isBlank()) {
-            throw new IllegalArgumentException("Player lookup cannot be blank.");
+            throw new MessageException(MessageKey.COMMAND_ERROR_PLAYER_LOOKUP_BLANK);
         }
 
         return normalized;

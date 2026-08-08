@@ -2,13 +2,12 @@ package io.github.silentdevelopment.headdb.paper.command.subcommand;
 
 import io.github.silentdevelopment.headdb.paper.HeadDBPlugin;
 import io.github.silentdevelopment.headdb.paper.command.CommandRequirements;
+import io.github.silentdevelopment.headdb.paper.message.MessageKey;
 import io.github.silentdevelopment.headdb.paper.permission.Permissions;
 import io.github.silentdevelopment.relay.command.Command;
 import io.github.silentdevelopment.relay.paper.command.AbstractPaperCommand;
 import io.github.silentdevelopment.relay.paper.command.PaperCommands;
 import io.github.silentdevelopment.relay.paper.command.context.PaperCommandContext;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Objects;
@@ -29,7 +28,7 @@ public final class UpdateCommand extends AbstractPaperCommand {
             return;
         }
 
-        plugin.messages().send(context.sender(), Component.text("Checking for updates...", NamedTextColor.GRAY));
+        plugin.messages().send(context.sender(), plugin.messages().render(context.sender(), MessageKey.COMMAND_UPDATE_CHECKING));
     }
 
     @Override

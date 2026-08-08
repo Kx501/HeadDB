@@ -74,7 +74,7 @@ public final class SearchFilterPageFactory implements PaperPageFactory<SearchMen
         page.type(MenuType.GENERIC_9X6);
         Set<Integer> reservedSlots = new HashSet<>();
         Player player = player(context);
-        page.title(GuiTitles.title(mode.title(), player != null && plugin.adminModes().enabled(player)));
+        page.title(GuiTitles.title(modeTitle(), player != null && plugin.adminModes().enabled(player)));
 
         set(page, reservedSlots, SLOT_BACK, backButton());
 
@@ -154,8 +154,8 @@ public final class SearchFilterPageFactory implements PaperPageFactory<SearchMen
                 iconKey,
                 GuiItems.name(entry.name(), selected ? NamedTextColor.GREEN : NamedTextColor.GOLD),
                 List.of(
-                        GuiItems.idDetail("ID", entry.id()),
-                        GuiItems.lore(selected ? "Selected. Click to remove." : "Click to select.", selected ? NamedTextColor.GREEN : NamedTextColor.GRAY)
+                        GuiItems.idDetail(text("label.id", "ID"), entry.id()),
+                        GuiItems.lore(selected ? text("hint.filter-deselect", "Selected. Click to remove.") : text("hint.filter-select", "Click to select."), selected ? NamedTextColor.GREEN : NamedTextColor.GRAY)
                 ),
                 context -> {
                     Player player = player(context);
@@ -204,8 +204,8 @@ public final class SearchFilterPageFactory implements PaperPageFactory<SearchMen
                 plugin,
                 "clear_" + mode.name().toLowerCase(Locale.ROOT),
                 "clear-filters",
-                GuiItems.name("Clear " + mode.label(), NamedTextColor.RED),
-                List.of(GuiItems.lore("Remove selected " + mode.label().toLowerCase(Locale.ROOT) + ".", NamedTextColor.GRAY)),
+                GuiItems.name(text("name.clear-filter", "Clear %type%").replace("%type%", modeLabel()), NamedTextColor.RED),
+                List.of(GuiItems.lore(text("hint.clear-filter", "Remove selected %type%.").replace("%type%", modeLabel().toLowerCase(Locale.ROOT)), NamedTextColor.GRAY)),
                 context -> {
                     SearchRequest request = SearchState.request(context);
                     SearchRequest updated = switch (mode) {
@@ -225,14 +225,34 @@ public final class SearchFilterPageFactory implements PaperPageFactory<SearchMen
                 plugin,
                 mode.name().toLowerCase(Locale.ROOT) + "_info",
                 "info",
-                GuiItems.name(mode.title(), NamedTextColor.GOLD),
+                GuiItems.name(modeTitle(), NamedTextColor.GOLD),
                 List.of(
-                        GuiItems.idDetail("Entries", entries),
-                        GuiItems.idDetail("Selected", selectedCount(request)),
-                        GuiItems.idDetail("Page", (pageIndex + 1) + " / " + Math.max(1, pages))
+                        GuiItems.idDetail(text("label.entries", "Entries"), entries),
+                        GuiItems.idDetail(text("label.selected", "Selected"), selectedCount(request)),
+                        GuiItems.idDetail(text("label.page", "Page"), (pageIndex + 1) + " / " + Math.max(1, pages))
                 ),
                 ignored -> {}
         );
+    }
+
+    private @NotNull String modeTitle() {
+        return text(switch (mode) {
+            case CATEGORY -> "name.category-filters";
+            case TAGS -> "name.tag-filters";
+            case COLLECTIONS -> "name.collection-filters";
+        }, mode.title());
+    }
+
+    private @NotNull String modeLabel() {
+        return text(switch (mode) {
+            case CATEGORY -> "label.categories";
+            case TAGS -> "label.tags";
+            case COLLECTIONS -> "label.collections";
+        }, mode.label());
+    }
+
+    private @NotNull String text(@NotNull String key, @NotNull String fallback) {
+        return plugin.guiConfig().text(key, fallback);
     }
 
     private int selectedCount(@NotNull SearchRequest request) {
@@ -248,10 +268,10 @@ public final class SearchFilterPageFactory implements PaperPageFactory<SearchMen
                 plugin,
                 "locked_category_filter",
                 "filter-category",
-                GuiItems.name("Category Scope", NamedTextColor.GOLD),
+                GuiItems.name(text("name.category-scope", "Category Scope"), NamedTextColor.GOLD),
                 List.of(
-                        GuiItems.idDetail("Current", request.category()),
-                        GuiItems.lore("Use tag or collection filters inside this category.", NamedTextColor.DARK_GRAY)
+                        GuiItems.idDetail(text("label.current", "Current"), request.category()),
+                        GuiItems.lore(text("hint.category-scope", "Use tag or collection filters inside this category."), NamedTextColor.DARK_GRAY)
                 ),
                 ignored -> {}
         );
@@ -262,8 +282,8 @@ public final class SearchFilterPageFactory implements PaperPageFactory<SearchMen
                 plugin,
                 "filter_denied",
                 "no-permission",
-                GuiItems.name("No Permission", NamedTextColor.RED),
-                List.of(GuiItems.lore("You cannot change search filters.", NamedTextColor.GRAY)),
+                GuiItems.name(text("name.no-permission", "No Permission"), NamedTextColor.RED),
+                List.of(GuiItems.lore(text("hint.no-filter-permission", "You cannot change search filters."), NamedTextColor.GRAY)),
                 ignored -> {}
         );
     }

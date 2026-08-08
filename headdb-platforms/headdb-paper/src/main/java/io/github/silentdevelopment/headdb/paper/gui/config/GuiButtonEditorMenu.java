@@ -6,6 +6,7 @@ import io.github.silentdevelopment.headdb.paper.gui.common.GuiHeadIcons;
 import io.github.silentdevelopment.headdb.paper.gui.common.GuiItems;
 import io.github.silentdevelopment.headdb.paper.gui.common.GuiTitles;
 import io.github.silentdevelopment.headdb.paper.gui.material.MaterialSelectionMenu;
+import io.github.silentdevelopment.headdb.paper.message.MessageKey;
 import io.github.silentdevelopment.headdb.paper.permission.Permissions;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -175,7 +176,7 @@ public final class GuiButtonEditorMenu {
         }
 
         if (action.equals(ACTION_NAME)) {
-            prompt(plugin, player, "Enter MiniMessage name.", value -> editor.setName(key, value), key);
+            prompt(plugin, player, MessageKey.GUI_BUTTON_NAME_PROMPT, value -> editor.setName(key, value), key);
             return;
         }
 
@@ -188,13 +189,13 @@ public final class GuiButtonEditorMenu {
             GuiIconConfig icon = plugin.guiConfig().iconOrDefault(key, fallbackKey(key));
             String next = icon.iconType() == GuiIconType.HEAD ? "ITEM" : "HEAD";
             editor.setType(key, next);
-            player.sendMessage(Component.text("Button type set to ", NamedTextColor.GRAY).append(Component.text(next, NamedTextColor.GOLD)));
+            player.sendMessage(plugin.messages().render(player, MessageKey.GUI_BUTTON_TYPE_SET, Map.of("type", next)));
             open(plugin, player, key);
             return;
         }
 
         if (action.equals(ACTION_HEAD_ID)) {
-            prompt(plugin, player, "Enter head id. Use none to clear.", value -> editor.setHeadId(key, value.equalsIgnoreCase("none") ? "" : value), key);
+            prompt(plugin, player, MessageKey.GUI_BUTTON_HEAD_ID_PROMPT, value -> editor.setHeadId(key, value.equalsIgnoreCase("none") ? "" : value), key);
             return;
         }
 
@@ -205,7 +206,7 @@ public final class GuiButtonEditorMenu {
 
         if (action.equals(ACTION_RESET)) {
             editor.reset(key);
-            player.sendMessage(Component.text("GUI button reset: ", NamedTextColor.GRAY).append(Component.text(key, NamedTextColor.GOLD)));
+            player.sendMessage(plugin.messages().render(player, MessageKey.GUI_BUTTON_RESET, Map.of("button", key)));
             open(plugin, player, key);
         }
     }
@@ -221,14 +222,14 @@ public final class GuiButtonEditorMenu {
         return action(plugin, ACTION_TYPE, plugin.guiConfig().icon("gui-edit-type"), GuiItems.name("Type", NamedTextColor.GOLD), lore);
     }
 
-    private static void prompt(@NotNull HeadDBPlugin plugin, @NotNull Player player, @NotNull String message, @NotNull java.util.function.Consumer<String> edit, @NotNull String key) {
+    private static void prompt(@NotNull HeadDBPlugin plugin, @NotNull Player player, @NotNull MessageKey message, @NotNull java.util.function.Consumer<String> edit, @NotNull String key) {
         player.closeInventory();
-        plugin.prompts().request(player, Component.text(message, NamedTextColor.GOLD), value -> {
+        plugin.prompts().request(player, plugin.messages().render(player, message), value -> {
             edit.accept(value);
-            player.sendMessage(Component.text("GUI button updated: ", NamedTextColor.GRAY).append(Component.text(key, NamedTextColor.GOLD)));
+            player.sendMessage(plugin.messages().render(player, MessageKey.GUI_BUTTON_UPDATED, Map.of("button", key)));
             open(plugin, player, key);
         }, () -> {
-            player.sendMessage(Component.text("GUI edit cancelled.", NamedTextColor.GRAY));
+            player.sendMessage(plugin.messages().render(player, MessageKey.GUI_BUTTON_EDIT_CANCELLED));
             open(plugin, player, key);
         });
     }

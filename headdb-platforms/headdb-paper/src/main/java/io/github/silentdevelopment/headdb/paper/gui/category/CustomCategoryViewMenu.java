@@ -81,7 +81,7 @@ public final class CustomCategoryViewMenu {
         int pages = pageCount(heads.size());
         int page = Math.max(0, Math.min(requestedPage, pages - 1));
         Holder holder = new Holder(category.id(), page);
-        Inventory inventory = Bukkit.createInventory(holder, SIZE, GuiTitles.title(category.draft() ? "DRAFT - " + category.name() : category.name(), adminMode));
+        Inventory inventory = Bukkit.createInventory(holder, SIZE, GuiTitles.title(category.draft() ? text(plugin, "value.draft-prefix", "DRAFT - ") + category.name() : category.name(), adminMode));
         holder.inventory(inventory);
 
         fillBorder(plugin, inventory);
@@ -168,9 +168,9 @@ public final class CustomCategoryViewMenu {
                 item.editMeta(meta -> {
                     List<Component> lore = meta.lore() == null ? new ArrayList<>() : new ArrayList<>(meta.lore());
                     lore.add(Component.empty());
-                    lore.add(GuiItems.idDetail("ID", head.id().display()));
-                    lore.add(GuiItems.metaDetail("Category", head.category()));
-                    lore.add(Component.text("Press ", NamedTextColor.GRAY).append(Component.keybind("key.drop", NamedTextColor.GOLD)).append(Component.text(" to edit.", NamedTextColor.GRAY)).decoration(TextDecoration.ITALIC, false));
+                    lore.add(GuiItems.idDetail(text(plugin, "label.id", "ID"), head.id().display()));
+                    lore.add(GuiItems.metaDetail(text(plugin, "label.category", "Category"), head.category()));
+                    lore.add(Component.text(text(plugin, "hint.keybind-press", "Press "), NamedTextColor.GRAY).append(Component.keybind("key.drop", NamedTextColor.GOLD)).append(Component.text(text(plugin, "hint.keybind-edit", " to edit."), NamedTextColor.GRAY)).decoration(TextDecoration.ITALIC, false));
                     meta.lore(lore);
                 });
             }
@@ -181,7 +181,7 @@ public final class CustomCategoryViewMenu {
 
     private static void renderControls(@NotNull HeadDBPlugin plugin, @NotNull Player player, @NotNull Inventory inventory, @NotNull CustomCategory category, int totalHeads, int page, int pages) {
         inventory.setItem(SLOT_BACK, action(plugin, ACTION_BACK, "back"));
-        inventory.setItem(SLOT_INFO, GuiHeadIcons.icon(plugin, plugin.guiConfig().icon("info"), GuiItems.name("Info", NamedTextColor.GOLD), List.of(GuiItems.idDetail("Heads", totalHeads), GuiItems.idDetail("ID", category.id()), GuiItems.idDetail("Page", (page + 1) + " / " + Math.max(1, pages)))));
+        inventory.setItem(SLOT_INFO, GuiHeadIcons.icon(plugin, plugin.guiConfig().icon("info"), GuiItems.name(text(plugin, "name.info", "Info"), NamedTextColor.GOLD), List.of(GuiItems.idDetail(text(plugin, "label.heads", "Heads"), totalHeads), GuiItems.idDetail(text(plugin, "label.id", "ID"), category.id()), GuiItems.idDetail(text(plugin, "label.page", "Page"), (page + 1) + " / " + Math.max(1, pages)))));
         if (page > 0) {
             inventory.setItem(SLOT_PREVIOUS, action(plugin, ACTION_PREVIOUS, "previous"));
         }
@@ -253,6 +253,10 @@ public final class CustomCategoryViewMenu {
             return 1;
         }
         return (int) Math.ceil((double) entries / (double) HEAD_SLOTS.length);
+    }
+
+    private static @NotNull String text(@NotNull HeadDBPlugin plugin, @NotNull String key, @NotNull String fallback) {
+        return plugin.guiConfig().text(key, fallback);
     }
 
     private static void noPermission(@NotNull HeadDBPlugin plugin, @NotNull Player player) {

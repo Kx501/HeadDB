@@ -1,10 +1,13 @@
 package io.github.silentdevelopment.headdb.paper.local.taxonomy;
 
+import io.github.silentdevelopment.headdb.paper.message.MessageException;
+import io.github.silentdevelopment.headdb.paper.message.MessageKey;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.time.Instant;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -20,7 +23,7 @@ public record CustomTaxonomyEntry(@NotNull String id, @NotNull String name, @Not
         Objects.requireNonNull(description, "description");
 
         id = normalizeId(id);
-        name = requireText(name, "Name");
+        name = requireText(name, MessageKey.COMMAND_ERROR_NAME_BLANK);
         description = description.trim().isBlank() ? "Local custom entry." : description.trim();
         if (createdAt == null) {
             createdAt = Instant.now();
@@ -42,7 +45,7 @@ public record CustomTaxonomyEntry(@NotNull String id, @NotNull String name, @Not
         Objects.requireNonNull(value, "value");
         String normalized = value.trim().toLowerCase(Locale.ROOT).replace(' ', '-');
         if (normalized.isBlank()) {
-            throw new IllegalArgumentException("ID cannot be blank.");
+            throw new MessageException(MessageKey.COMMAND_ERROR_ID_BLANK);
         }
 
         for (int index = 0; index < normalized.length(); index++) {
@@ -50,17 +53,17 @@ public record CustomTaxonomyEntry(@NotNull String id, @NotNull String name, @Not
             if ((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '-' || c == '_' || c == '.') {
                 continue;
             }
-            throw new IllegalArgumentException("ID contains an invalid character: " + c);
+            throw new MessageException(MessageKey.COMMAND_ERROR_ID_INVALID_CHARACTER, Map.of("character", String.valueOf(c)));
         }
 
         return normalized;
     }
 
-    private static @NotNull String requireText(@NotNull String value, @NotNull String name) {
+    private static @NotNull String requireText(@NotNull String value, @NotNull MessageKey key) {
         Objects.requireNonNull(value, "value");
         String normalized = value.trim();
         if (normalized.isBlank()) {
-            throw new IllegalArgumentException(name + " cannot be blank.");
+            throw new MessageException(key);
         }
         return normalized;
     }

@@ -5,6 +5,8 @@ import io.github.silentdevelopment.headdb.paper.HeadDBPlugin;
 import io.github.silentdevelopment.headdb.paper.command.CommandRequirements;
 import io.github.silentdevelopment.headdb.paper.command.Suggestions;
 import io.github.silentdevelopment.headdb.paper.command.format.ListFormatter;
+import io.github.silentdevelopment.headdb.paper.message.MessageException;
+import io.github.silentdevelopment.headdb.paper.message.MessageKey;
 import io.github.silentdevelopment.headdb.paper.permission.Permissions;
 import io.github.silentdevelopment.headdb.paper.local.taxonomy.CustomTaxonomyEntry;
 import io.github.silentdevelopment.relay.argument.Argument;
@@ -36,13 +38,18 @@ public final class CollectionsCommand extends AbstractPaperCommand {
 
     @Override
     protected void handle(@NotNull PaperCommandContext context) {
-        if (context.has(QUERY) && context.get(QUERY).trim().equalsIgnoreCase("create")) {
-            create(context);
-            return;
-        }
+        String action = context.has(QUERY) ? context.get(QUERY).trim() : "";
 
-        if (context.has(QUERY) && context.get(QUERY).trim().equalsIgnoreCase("delete")) {
-            delete(context);
+        if (action.equalsIgnoreCase("create") || action.equalsIgnoreCase("delete")) {
+            try {
+                if (action.equalsIgnoreCase("create")) {
+                    create(context);
+                } else {
+                    delete(context);
+                }
+            } catch (IllegalArgumentException exception) {
+                plugin.messages().send(context.sender(), plugin.messages().invalidArgument(context.sender(), exception));
+            }
             return;
         }
 
@@ -54,7 +61,9 @@ public final class CollectionsCommand extends AbstractPaperCommand {
                 .map(collection -> new ListFormatter.Entry(collection.id(), collection.name()))
                 .toList();
 
-        for (var line : ListFormatter.format("Head Collections", entries, request.page(), PAGE_SIZE)) {
+        String title = plugin.messages().text(context.sender(), "command.list.collections", "Head Collections");
+
+        for (var line : ListFormatter.format(plugin.messages(), context.sender(), title, entries, request.page(), PAGE_SIZE)) {
             plugin.messages().send(context.sender(), line);
         }
     }
@@ -75,7 +84,7 @@ public final class CollectionsCommand extends AbstractPaperCommand {
 
     private void create(@NotNull PaperCommandContext context) {
         require(context, Permissions.COLLECTION_CREATE);
-        String id = required(context, PAGE, "Usage: /hdb collections create <id> [name]");
+        String id = required(context, PAGE, MessageKey.COMMAND_USAGE_COLLECTIONS_CREATE);
         String name = context.has(VALUE) && !context.get(VALUE).trim().isBlank() ? context.get(VALUE).trim() : displayName(id);
         java.util.UUID createdBy = context.isPlayer() ? context.player().getUniqueId() : null;
         CustomTaxonomyEntry entry = plugin.customCollections().create(id, name, createdBy);
@@ -87,7 +96,7 @@ public final class CollectionsCommand extends AbstractPaperCommand {
 
     private void delete(@NotNull PaperCommandContext context) {
         require(context, Permissions.COLLECTION_DELETE);
-        String id = required(context, PAGE, "Usage: /hdb collections delete <id>");
+        String id = required(context, PAGE, MessageKey.COMMAND_USAGE_COLLECTIONS_DELETE);
         boolean deleted = plugin.customCollections().delete(id);
         if (!deleted) {
             plugin.messages().send(context.sender(), plugin.messages().taxonomyUnknown(context.sender(), "collection", id));
@@ -101,13 +110,13 @@ public final class CollectionsCommand extends AbstractPaperCommand {
 
     private static void require(@NotNull PaperCommandContext context, @NotNull String permission) {
         if (!Permissions.has(context.sender(), permission)) {
-            throw new IllegalArgumentException("You do not have permission to do that.");
+            throw new MessageException(MessageKey.COMMAND_ERROR_NO_PERMISSION);
         }
     }
 
-    private static @NotNull String required(@NotNull PaperCommandContext context, @NotNull Argument<String> argument, @NotNull String message) {
+    private static @NotNull String required(@NotNull PaperCommandContext context, @NotNull Argument<String> argument, @NotNull MessageKey key) {
         if (!context.has(argument) || context.get(argument).trim().isBlank()) {
-            throw new IllegalArgumentException(message);
+            throw new MessageException(key);
         }
         return context.get(argument).trim();
     }

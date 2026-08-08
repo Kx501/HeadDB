@@ -14,6 +14,7 @@ import io.github.silentdevelopment.headdb.paper.gui.edit.HeadEditMenu;
 import io.github.silentdevelopment.headdb.paper.item.HeadItemIds;
 import io.github.silentdevelopment.headdb.paper.local.custom.StoredCustomHead;
 import io.github.silentdevelopment.headdb.paper.local.texture.TextureInputParser;
+import io.github.silentdevelopment.headdb.paper.message.MessageException;
 import io.github.silentdevelopment.headdb.paper.message.MessageKey;
 import io.github.silentdevelopment.headdb.paper.permission.Permissions;
 import io.github.silentdevelopment.headdb.paper.sound.SoundKey;
@@ -174,22 +175,22 @@ public final class CreateHeadMenu {
         }
 
         if (action.equals(ACTION_ID)) {
-            prompt(plugin, player, "Enter the custom head id.", value -> update(player, draft.withId(value)));
+            prompt(plugin, player, MessageKey.GUI_HEAD_ID_PROMPT, value -> update(player, draft.withId(value)));
             return;
         }
 
         if (action.equals(ACTION_NAME)) {
-            prompt(plugin, player, "Enter the custom head name.", value -> update(player, draft.withName(value)));
+            prompt(plugin, player, MessageKey.GUI_HEAD_NAME_PROMPT, value -> update(player, draft.withName(value)));
             return;
         }
 
         if (action.equals(ACTION_TEXTURE)) {
-            prompt(plugin, player, "Enter a texture hash, URL, or base64 value.", value -> {
+            prompt(plugin, player, MessageKey.GUI_HEAD_TEXTURE_PROMPT, value -> {
                 try {
                     HeadTexture texture = new TextureInputParser().parse(value);
                     update(player, draft.withTexture(texture.hash()));
                 } catch (IllegalArgumentException exception) {
-                    player.sendMessage(Component.text(exception.getMessage(), NamedTextColor.RED));
+                    player.sendMessage(plugin.messages().invalidArgument(player, exception));
                     plugin.sounds().play(player, SoundKey.VALIDATION_ERROR);
                 }
             });
@@ -489,7 +490,7 @@ public final class CreateHeadMenu {
             DRAFTS.put(player.getUniqueId(), draft.withTexture(texture.hash()));
             player.getScheduler().run(plugin, task -> open(plugin, player), () -> {});
         } catch (IllegalArgumentException exception) {
-            player.sendMessage(Component.text(exception.getMessage(), NamedTextColor.RED));
+            player.sendMessage(plugin.messages().invalidArgument(player, exception));
             plugin.sounds().play(player, SoundKey.INVALID);
         }
     }
@@ -527,7 +528,7 @@ public final class CreateHeadMenu {
             }
 
             DRAFTS.remove(player.getUniqueId());
-            player.sendMessage(Component.text("Saved draft head: ", NamedTextColor.GRAY).append(Component.text(head.name() + " (" + head.headId().display() + ")", NamedTextColor.GOLD)));
+            player.sendMessage(plugin.messages().render(player, MessageKey.GUI_HEAD_DRAFT_SAVED, Map.of("head", head.name() + " (" + head.headId().display() + ")")));
             plugin.sounds().play(player, SoundKey.SAVE_DRAFT);
             HeadEditMenu.open(plugin, player, HeadId.custom(head.id()));
         } catch (IllegalArgumentException exception) {
@@ -535,15 +536,15 @@ public final class CreateHeadMenu {
                 return;
             }
 
-            player.sendMessage(Component.text(exception.getMessage(), NamedTextColor.RED));
+            player.sendMessage(plugin.messages().invalidArgument(player, exception));
             plugin.sounds().play(player, SoundKey.VALIDATION_ERROR);
             open(plugin, player);
         }
     }
 
-    private static void prompt(@NotNull HeadDBPlugin plugin, @NotNull Player player, @NotNull String message, @NotNull Consumer<String> input) {
+    private static void prompt(@NotNull HeadDBPlugin plugin, @NotNull Player player, @NotNull MessageKey message, @NotNull Consumer<String> input) {
         player.closeInventory();
-        player.getScheduler().run(plugin, task -> plugin.prompts().request(player, Component.text(message, NamedTextColor.GOLD), value -> {
+        player.getScheduler().run(plugin, task -> plugin.prompts().request(player, plugin.messages().render(player, message), value -> {
             input.accept(value);
             open(plugin, player);
         }, () -> open(plugin, player)), () -> {});
@@ -643,11 +644,11 @@ public final class CreateHeadMenu {
         private @NotNull StoredCustomHead toStored(@NotNull UUID createdBy) {
             String cleanId = id.trim();
             if (cleanId.isBlank()) {
-                throw new IllegalArgumentException("ID is required.");
+                throw new MessageException(MessageKey.COMMAND_ERROR_ID_REQUIRED);
             }
 
             if (texture.trim().isBlank()) {
-                throw new IllegalArgumentException("Texture is required.");
+                throw new MessageException(MessageKey.COMMAND_ERROR_TEXTURE_REQUIRED);
             }
 
             String cleanName = name.trim().isBlank() ? displayName(cleanId) : name.trim();

@@ -14,6 +14,7 @@ import io.github.silentdevelopment.headdb.paper.search.SearchRequest;
 import io.github.silentdevelopment.headdb.paper.gui.common.GuiHeadIcons;
 import io.github.silentdevelopment.headdb.paper.gui.common.GuiItems;
 import io.github.silentdevelopment.headdb.paper.gui.common.GuiTitles;
+import io.github.silentdevelopment.headdb.paper.message.MessageKey;
 import io.github.silentdevelopment.headdb.query.HeadSort;
 import io.github.silentdevelopment.headdb.query.SortDirection;
 import io.github.silentdevelopment.headdb.paper.permission.Permissions;
@@ -76,7 +77,7 @@ public final class SearchOptionsPageFactory implements PaperPageFactory<SearchMe
 
         page.type(MenuType.GENERIC_9X6);
         Player player = player(context);
-        page.title(GuiTitles.title("Advanced Search", player != null && plugin.adminModes().enabled(player)));
+        page.title(GuiTitles.title(text("title.advanced-search", "Advanced Search"), player != null && plugin.adminModes().enabled(player)));
 
         if (player == null || !Permissions.has(player, Permissions.GUI_FILTER)) {
             set(page, reservedSlots, SLOT_BACK, backButton());
@@ -119,7 +120,7 @@ public final class SearchOptionsPageFactory implements PaperPageFactory<SearchMe
 
 
     private @NotNull ItemElement<SearchMenuState> deniedButton() {
-        return GuiHeadIcons.<SearchMenuState>button(plugin, "empty", "empty", GuiItems.name("No Permission", NamedTextColor.RED), List.of(GuiItems.lore("You cannot change search filters.", NamedTextColor.GRAY)), ignored -> {});
+        return GuiHeadIcons.<SearchMenuState>button(plugin, "empty", "empty", GuiItems.name(text("name.no-permission", "No Permission"), NamedTextColor.RED), List.of(GuiItems.lore(text("hint.no-filter-permission", "You cannot change search filters."), NamedTextColor.GRAY)), ignored -> {});
     }
 
     private @NotNull ItemElement<SearchMenuState> queryButton(@NotNull SearchRequest request) {
@@ -129,10 +130,10 @@ public final class SearchOptionsPageFactory implements PaperPageFactory<SearchMe
                 plugin,
                 "search_query",
                 "search",
-                GuiItems.name("Text Query", NamedTextColor.GOLD),
+                GuiItems.name(text("name.text-query", "Text Query"), NamedTextColor.GOLD),
                 List.of(
-                        GuiItems.metaDetail("Current", request.query().isBlank() ? "none" : request.query()),
-                        GuiItems.lore("Click to enter a text query.", NamedTextColor.GREEN)
+                        GuiItems.metaDetail(text("label.current", "Current"), request.query().isBlank() ? text("value.none", "none") : request.query()),
+                        GuiItems.lore(text("hint.enter-query", "Click to enter a text query."), NamedTextColor.GREEN)
                 ),
                 context -> {
                     Player player = player(context);
@@ -142,10 +143,10 @@ public final class SearchOptionsPageFactory implements PaperPageFactory<SearchMe
 
                     SearchRequest currentRequest = SearchState.request(context);
                     SearchMenuState.BackTarget backTarget = context.source().optionsBackTarget();
-                    promptAfterClose(player, Component.text("Enter a search query.", NamedTextColor.GOLD), value -> {
+                    promptAfterClose(player, plugin.messages().render(player, MessageKey.GUI_SEARCH_PROMPT), value -> {
                         plugin.guis().openAdvancedSearch(player, currentRequest.withQuery(value), backTarget);
                     }, () -> {
-                        player.sendMessage(Component.text("Search cancelled.", NamedTextColor.GRAY));
+                        player.sendMessage(plugin.messages().render(player, MessageKey.GUI_SEARCH_CANCELLED));
                         plugin.guis().openAdvancedSearch(player, currentRequest, backTarget);
                     });
                 }
@@ -159,11 +160,11 @@ public final class SearchOptionsPageFactory implements PaperPageFactory<SearchMe
                 plugin,
                 "filter_ids",
                 "filter-ids",
-                GuiItems.name("Head ID Filters", NamedTextColor.GOLD),
+                GuiItems.name(text("name.head-id-filters", "Head ID Filters"), NamedTextColor.GOLD),
                 List.of(
-                        GuiItems.idDetail("Selected", request.ids().size()),
-                        GuiItems.lore("Click to enter comma-separated IDs.", NamedTextColor.GREEN),
-                        GuiItems.lore("Use remote:<id>, custom:<id>, player:<name|uuid>, or bare remote IDs.", NamedTextColor.DARK_GRAY)
+                        GuiItems.idDetail(text("label.selected", "Selected"), request.ids().size()),
+                        GuiItems.lore(text("hint.enter-ids", "Click to enter comma-separated IDs."), NamedTextColor.GREEN),
+                        GuiItems.lore(text("hint.ids-format", "Use remote:<id>, custom:<id>, player:<name|uuid>, or bare remote IDs."), NamedTextColor.DARK_GRAY)
                 ),
                 context -> {
                     Player player = player(context);
@@ -173,16 +174,16 @@ public final class SearchOptionsPageFactory implements PaperPageFactory<SearchMe
 
                     SearchRequest currentRequest = SearchState.request(context);
                     SearchMenuState.BackTarget backTarget = context.source().optionsBackTarget();
-                    promptAfterClose(player, Component.text("Enter comma-separated head IDs.", NamedTextColor.GOLD), value -> {
+                    promptAfterClose(player, plugin.messages().render(player, MessageKey.GUI_SEARCH_IDS_PROMPT), value -> {
                         try {
                             Set<HeadId> ids = value.isBlank() ? Set.of() : SearchParser.headIds(value);
                             plugin.guis().openAdvancedSearch(player, currentRequest.withIds(ids), backTarget);
                         } catch (IllegalArgumentException exception) {
-                            player.sendMessage(Component.text(exception.getMessage(), NamedTextColor.RED));
+                            player.sendMessage(plugin.messages().invalidArgument(player, exception));
                             plugin.guis().openAdvancedSearch(player, currentRequest, backTarget);
                         }
                     }, () -> {
-                        player.sendMessage(Component.text("Search cancelled.", NamedTextColor.GRAY));
+                        player.sendMessage(plugin.messages().render(player, MessageKey.GUI_SEARCH_CANCELLED));
                         plugin.guis().openAdvancedSearch(player, currentRequest, backTarget);
                     });
                 }
@@ -202,7 +203,7 @@ public final class SearchOptionsPageFactory implements PaperPageFactory<SearchMe
                 plugin,
                 "sort_cycle",
                 "sort-cycle",
-                GuiItems.name("Sort: " + displayEnum(request.sort().name()), NamedTextColor.GOLD),
+                GuiItems.name(text("name.sort-cycle", "Sort: %sort%").replace("%sort%", displayEnum(request.sort().name())), NamedTextColor.GOLD),
                 sortLore(request.sort()),
                 context -> {
                     SearchRequest currentRequest = SearchState.request(context);
@@ -219,7 +220,7 @@ public final class SearchOptionsPageFactory implements PaperPageFactory<SearchMe
                 plugin,
                 "sort_direction",
                 "sort-direction",
-                GuiItems.name("Direction: " + displayEnum(request.direction().name()), NamedTextColor.GOLD),
+                GuiItems.name(text("name.sort-direction", "Direction: %direction%").replace("%direction%", displayEnum(request.direction().name())), NamedTextColor.GOLD),
                 directionLore(request.direction()),
                 context -> {
                     SearchRequest currentRequest = SearchState.request(context);
@@ -240,10 +241,10 @@ public final class SearchOptionsPageFactory implements PaperPageFactory<SearchMe
                 plugin,
                 "filter_category",
                 "filter-category",
-                GuiItems.name("Category Filters", NamedTextColor.GOLD),
+                GuiItems.name(text("name.category-filters", "Category Filters"), NamedTextColor.GOLD),
                 List.of(
-                        GuiItems.idDetail("Selected", request.categories().size()),
-                        GuiItems.lore("Click to toggle categories.", NamedTextColor.GREEN)
+                        GuiItems.idDetail(text("label.selected", "Selected"), request.categories().size()),
+                        GuiItems.lore(text("hint.toggle-categories", "Click to toggle categories."), NamedTextColor.GREEN)
                 ),
                 context -> context.openPage(SearchFilterPageFactory.CATEGORY_KEY)
         );
@@ -256,10 +257,10 @@ public final class SearchOptionsPageFactory implements PaperPageFactory<SearchMe
                 plugin,
                 "filter_tags",
                 "filter-tags",
-                GuiItems.name("Tag Filters", NamedTextColor.GOLD),
+                GuiItems.name(text("name.tag-filters", "Tag Filters"), NamedTextColor.GOLD),
                 List.of(
-                        GuiItems.idDetail("Selected", request.tags().size()),
-                        GuiItems.lore("Click to toggle tags.", NamedTextColor.GREEN)
+                        GuiItems.idDetail(text("label.selected", "Selected"), request.tags().size()),
+                        GuiItems.lore(text("hint.toggle-tags", "Click to toggle tags."), NamedTextColor.GREEN)
                 ),
                 context -> context.openPage(SearchFilterPageFactory.TAGS_KEY)
         );
@@ -272,10 +273,10 @@ public final class SearchOptionsPageFactory implements PaperPageFactory<SearchMe
                 plugin,
                 "filter_collections",
                 "filter-collections",
-                GuiItems.name("Collection Filters", NamedTextColor.GOLD),
+                GuiItems.name(text("name.collection-filters", "Collection Filters"), NamedTextColor.GOLD),
                 List.of(
-                        GuiItems.idDetail("Selected", request.collections().size()),
-                        GuiItems.lore("Click to toggle collections.", NamedTextColor.GREEN)
+                        GuiItems.idDetail(text("label.selected", "Selected"), request.collections().size()),
+                        GuiItems.lore(text("hint.toggle-collections", "Click to toggle collections."), NamedTextColor.GREEN)
                 ),
                 context -> context.openPage(SearchFilterPageFactory.COLLECTIONS_KEY)
         );
@@ -288,13 +289,13 @@ public final class SearchOptionsPageFactory implements PaperPageFactory<SearchMe
                 plugin,
                 "clear_filters",
                 "clear-filters",
-                GuiItems.name("Clear Filters", NamedTextColor.RED),
+                GuiItems.name(text("name.clear-filters", "Clear Filters"), NamedTextColor.RED),
                 List.of(
-                        GuiItems.idDetail("IDs", request.ids().size()),
-                        GuiItems.idDetail("Categories", request.categoryLocked() ? "scoped" : request.categories().size()),
-                        GuiItems.idDetail("Tags", request.tags().size()),
-                        GuiItems.idDetail("Collections", request.collections().size()),
-                        GuiItems.lore("Click to clear selected filters.", NamedTextColor.GREEN)
+                        GuiItems.idDetail(text("label.ids", "IDs"), request.ids().size()),
+                        GuiItems.idDetail(text("label.categories", "Categories"), request.categoryLocked() ? text("value.scoped", "scoped") : request.categories().size()),
+                        GuiItems.idDetail(text("label.tags", "Tags"), request.tags().size()),
+                        GuiItems.idDetail(text("label.collections", "Collections"), request.collections().size()),
+                        GuiItems.lore(text("hint.clear-filters", "Click to clear selected filters."), NamedTextColor.GREEN)
                 ),
                 context -> {
                     SearchRequest currentRequest = SearchState.request(context);
@@ -311,14 +312,14 @@ public final class SearchOptionsPageFactory implements PaperPageFactory<SearchMe
                 plugin,
                 "options_summary",
                 "info",
-                GuiItems.name("Current Search", NamedTextColor.GOLD),
+                GuiItems.name(text("name.current-search", "Current Search"), NamedTextColor.GOLD),
                 List.of(
-                        GuiItems.metaDetail("Query", request.query().isBlank() ? "none" : request.query()),
-                        GuiItems.idDetail("IDs", request.ids().size()),
-                        GuiItems.idDetail("Categories", categorySummary(request)),
-                        GuiItems.idDetail("Tags", request.tags().size()),
-                        GuiItems.idDetail("Collections", request.collections().size()),
-                        GuiItems.metaDetail("Sort", displayEnum(request.sort().name()) + " " + displayEnum(request.direction().name()))
+                        GuiItems.metaDetail(text("label.query", "Query"), request.query().isBlank() ? text("value.none", "none") : request.query()),
+                        GuiItems.idDetail(text("label.ids", "IDs"), request.ids().size()),
+                        GuiItems.idDetail(text("label.categories", "Categories"), categorySummary(request)),
+                        GuiItems.idDetail(text("label.tags", "Tags"), request.tags().size()),
+                        GuiItems.idDetail(text("label.collections", "Collections"), request.collections().size()),
+                        GuiItems.metaDetail(text("label.sort", "Sort"), displayEnum(request.sort().name()) + " " + displayEnum(request.direction().name()))
                 ),
                 ignored -> {}
         );
@@ -329,8 +330,8 @@ public final class SearchOptionsPageFactory implements PaperPageFactory<SearchMe
                 plugin,
                 "execute_search",
                 "confirm-yes",
-                GuiItems.name("Run Search", NamedTextColor.GREEN),
-                List.of(GuiItems.lore("Open the matching heads.", NamedTextColor.GRAY)),
+                GuiItems.name(text("name.run-search", "Run Search"), NamedTextColor.GREEN),
+                List.of(GuiItems.lore(text("hint.run-search", "Open the matching heads."), NamedTextColor.GRAY)),
                 context -> context.openPage(SearchPageFactory.KEY)
         );
     }
@@ -354,12 +355,12 @@ public final class SearchOptionsPageFactory implements PaperPageFactory<SearchMe
         }
     }
 
-    private static @NotNull List<Component> sortLore(@NotNull HeadSort selected) {
+    private @NotNull List<Component> sortLore(@NotNull HeadSort selected) {
         Objects.requireNonNull(selected, "selected");
 
         List<Component> lore = new ArrayList<>();
 
-        lore.add(GuiItems.lore("Click to cycle sort mode.", NamedTextColor.DARK_GRAY));
+        lore.add(GuiItems.lore(text("hint.cycle-sort", "Click to cycle sort mode."), NamedTextColor.DARK_GRAY));
         lore.add(Component.empty());
 
         for (HeadSort sort : HeadSort.values()) {
@@ -369,12 +370,12 @@ public final class SearchOptionsPageFactory implements PaperPageFactory<SearchMe
         return List.copyOf(lore);
     }
 
-    private static @NotNull List<Component> directionLore(@NotNull SortDirection selected) {
+    private @NotNull List<Component> directionLore(@NotNull SortDirection selected) {
         Objects.requireNonNull(selected, "selected");
 
         List<Component> lore = new ArrayList<>();
 
-        lore.add(GuiItems.lore("Click to toggle direction.", NamedTextColor.DARK_GRAY));
+        lore.add(GuiItems.lore(text("hint.toggle-direction", "Click to toggle direction."), NamedTextColor.DARK_GRAY));
         lore.add(Component.empty());
 
         for (SortDirection direction : SortDirection.values()) {
@@ -410,7 +411,7 @@ public final class SearchOptionsPageFactory implements PaperPageFactory<SearchMe
         return values[0];
     }
 
-    private static @NotNull String categorySummary(@NotNull SearchRequest request) {
+    private @NotNull String categorySummary(@NotNull SearchRequest request) {
         Objects.requireNonNull(request, "request");
 
         if (request.categoryLocked()) {
@@ -418,10 +419,14 @@ public final class SearchOptionsPageFactory implements PaperPageFactory<SearchMe
         }
 
         if (request.categories().isEmpty()) {
-            return "all";
+            return text("value.all", "all");
         }
 
         return String.valueOf(request.categories().size());
+    }
+
+    private @NotNull String text(@NotNull String key, @NotNull String fallback) {
+        return plugin.guiConfig().text(key, fallback);
     }
 
     private static @NotNull String displayEnum(@NotNull String value) {

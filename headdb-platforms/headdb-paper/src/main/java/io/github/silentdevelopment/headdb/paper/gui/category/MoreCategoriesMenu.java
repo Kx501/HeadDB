@@ -8,6 +8,7 @@ import io.github.silentdevelopment.headdb.paper.gui.common.GuiItems;
 import io.github.silentdevelopment.headdb.paper.gui.common.GuiMaterials;
 import io.github.silentdevelopment.headdb.paper.gui.common.GuiTitles;
 import io.github.silentdevelopment.headdb.paper.gui.material.MaterialSelectionMenu;
+import io.github.silentdevelopment.headdb.paper.message.MessageKey;
 import io.github.silentdevelopment.headdb.paper.permission.Permissions;
 import io.github.silentdevelopment.headdb.paper.search.SearchRequest;
 import io.github.silentdevelopment.headdb.query.HeadSort;
@@ -27,6 +28,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -291,7 +293,7 @@ public final class MoreCategoriesMenu {
                     return;
                 }
                 plugin.customCategories().delete(id);
-                player.sendMessage(Component.text("Custom category deleted: ", NamedTextColor.GRAY).append(Component.text(id, NamedTextColor.GOLD)));
+                player.sendMessage(plugin.messages().render(player, MessageKey.GUI_CATEGORY_DELETED, Map.of("id", id)));
                 open(plugin, player, MoreCategoryMode.BROWSE, holder.page());
                 return;
             }
@@ -305,7 +307,7 @@ public final class MoreCategoriesMenu {
             return;
         }
         if (action.equals(ACTION_EDIT_NAME)) {
-            promptField(plugin, player, holder, "Enter the custom category display name.", value -> openEditor(plugin, player, holder.withName(value)));
+            promptField(plugin, player, holder, MessageKey.GUI_CATEGORY_NAME_PROMPT, value -> openEditor(plugin, player, holder.withName(value)));
             return;
         }
         if (action.equals(ACTION_EDIT_MATERIAL)) {
@@ -318,7 +320,7 @@ public final class MoreCategoriesMenu {
         }
         if (action.equals(ACTION_EDIT_VIEW_HEADS)) {
             if (holder.id().isBlank()) {
-                player.sendMessage(Component.text("Save this custom category before managing heads.", NamedTextColor.RED));
+                player.sendMessage(plugin.messages().render(player, MessageKey.GUI_CATEGORY_SAVE_FIRST));
                 openEditor(plugin, player, holder);
                 return;
             }
@@ -336,7 +338,7 @@ public final class MoreCategoriesMenu {
             return;
         }
         if (holder.name().isBlank()) {
-            player.sendMessage(Component.text("Set a name before saving.", NamedTextColor.RED));
+            player.sendMessage(plugin.messages().render(player, MessageKey.GUI_CATEGORY_NAME_REQUIRED));
             openEditor(plugin, player, holder);
             return;
         }
@@ -344,13 +346,13 @@ public final class MoreCategoriesMenu {
         String id = holder.id().isBlank() ? plugin.customCategories().nextId() : holder.id();
         Set<HeadId> existingMembers = plugin.customCategories().find(id).map(CustomCategory::headIds).orElse(Set.of());
         plugin.customCategories().save(new CustomCategory(id, holder.name(), holder.material(), existingMembers));
-        player.sendMessage(Component.text("Custom category saved: ", NamedTextColor.GRAY).append(Component.text(holder.name(), NamedTextColor.GOLD)));
+        player.sendMessage(plugin.messages().render(player, MessageKey.GUI_CATEGORY_SAVED, Map.of("name", holder.name())));
         openEdit(plugin, player, id, holder.name(), holder.material());
     }
 
     private static void promptHeadIcon(@NotNull HeadDBPlugin plugin, @NotNull Player player, @NotNull CategoryEditorHolder holder) {
         player.closeInventory();
-        plugin.prompts().request(player, Component.text("Enter a head id for the category icon, or none to clear.", NamedTextColor.GOLD), value -> {
+        plugin.prompts().request(player, plugin.messages().render(player, MessageKey.GUI_CATEGORY_ICON_PROMPT), value -> {
             if (value.equalsIgnoreCase("none") || value.equalsIgnoreCase("clear")) {
                 openEditor(plugin, player, holder.withMaterial("CHEST"));
                 return;
@@ -360,13 +362,13 @@ public final class MoreCategoriesMenu {
             try {
                 id = parseHeadId(value);
             } catch (IllegalArgumentException exception) {
-                player.sendMessage(Component.text(exception.getMessage(), NamedTextColor.RED));
+                player.sendMessage(plugin.messages().invalidArgument(player, exception));
                 openEditor(plugin, player, holder);
                 return;
             }
 
             if (plugin.headRegistry().find(id).isEmpty()) {
-                player.sendMessage(Component.text("Unknown head: ", NamedTextColor.RED).append(Component.text(id.display(), NamedTextColor.GOLD)));
+                player.sendMessage(plugin.messages().unknownHead(player, id));
                 openEditor(plugin, player, holder);
                 return;
             }
@@ -375,9 +377,9 @@ public final class MoreCategoriesMenu {
         }, () -> openEditor(plugin, player, holder));
     }
 
-    private static void promptField(@NotNull HeadDBPlugin plugin, @NotNull Player player, @NotNull CategoryEditorHolder holder, @NotNull String message, @NotNull java.util.function.Consumer<String> callback) {
+    private static void promptField(@NotNull HeadDBPlugin plugin, @NotNull Player player, @NotNull CategoryEditorHolder holder, @NotNull MessageKey message, @NotNull java.util.function.Consumer<String> callback) {
         player.closeInventory();
-        plugin.prompts().request(player, Component.text(message, NamedTextColor.GOLD), callback, () -> openEditor(plugin, player, holder));
+        plugin.prompts().request(player, plugin.messages().render(player, message), callback, () -> openEditor(plugin, player, holder));
     }
 
     private static void openConfirm(@NotNull HeadDBPlugin plugin, @NotNull Player player, @NotNull String id, int page) {

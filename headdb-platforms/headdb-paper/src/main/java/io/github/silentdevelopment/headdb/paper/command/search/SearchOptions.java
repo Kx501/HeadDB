@@ -1,6 +1,8 @@
 package io.github.silentdevelopment.headdb.paper.command.search;
 
 import io.github.silentdevelopment.headdb.model.HeadId;
+import io.github.silentdevelopment.headdb.paper.message.MessageException;
+import io.github.silentdevelopment.headdb.paper.message.MessageKey;
 import io.github.silentdevelopment.headdb.paper.search.SearchRequest;
 import io.github.silentdevelopment.headdb.query.HeadSort;
 import io.github.silentdevelopment.headdb.query.SortDirection;
@@ -13,6 +15,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 public final class SearchOptions {
@@ -112,21 +115,21 @@ public final class SearchOptions {
 
     private static void validatePage(int page) {
         if (page < 1) {
-            throw new IllegalArgumentException("Page must be at least 1.");
+            throw new MessageException(MessageKey.COMMAND_ERROR_PAGE_MIN);
         }
 
         if (page > MAX_PAGE) {
-            throw new IllegalArgumentException("Page cannot be greater than " + MAX_PAGE + ".");
+            throw new MessageException(MessageKey.COMMAND_ERROR_PAGE_MAX, Map.of("max", String.valueOf(MAX_PAGE)));
         }
     }
 
     private static void validateLimit(int limit) {
         if (limit < 1) {
-            throw new IllegalArgumentException("Limit must be at least 1.");
+            throw new MessageException(MessageKey.COMMAND_ERROR_LIMIT_MIN);
         }
 
         if (limit > MAX_LIMIT) {
-            throw new IllegalArgumentException("Limit cannot be greater than " + MAX_LIMIT + ".");
+            throw new MessageException(MessageKey.COMMAND_ERROR_LIMIT_MAX, Map.of("max", String.valueOf(MAX_LIMIT)));
         }
     }
 }
