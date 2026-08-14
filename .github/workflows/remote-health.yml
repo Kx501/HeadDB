@@ -2,7 +2,7 @@ name: Remote Health
 
 on:
   schedule:
-    - cron: '17 */6 * * *'
+    - cron: '17 4 * * *'
   workflow_dispatch:
 
 permissions:
@@ -25,4 +25,4 @@ jobs:
       - name: Validate live manifest and mirror integrity
         env:
           MANIFEST_URL: https://data.headsdb.com/manifest.json
-        run: .github/scripts/check-remote.py
+        run: python3 .github/scripts/check-remote.py
